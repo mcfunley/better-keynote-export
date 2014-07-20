@@ -1,0 +1,182 @@
+
+
+So hey everybody, my name is Dan McKinley
+
+I’m visiting from LA
+
+I worked for Etsy for 6.5 years, mostly from Brooklyn. In an office considerably less sparse than this one, I assure you.
+Mea culpa, that’s “worked” in the past tense. I quit to join a startup last month. After signing up to give this talk. But I left on very good terms so I’m still doing it.
+
+This talk’s about Scalding, and how we wound up using it at Etsy.
+
+When I was writing this talk this passage from Douglas Adams kept popping into my brain. I do feel like we had scalding thrust upon us at Etsy, rather than choosing it intentionally. Which is not the same as saying that I was personally unhappy with it, exactly. I was not.
+This is the character that went on to try to insult every being in the cosmos in alphabetical order. So I’m not sure if it was intended as intentional allegory about the scala community.
+
+The first thing I wanted to do was give an overview of how Etsy uses scalding now.
+
+This is hopefully the only strata-esque slide in the talk. Don’t run for the exits or anything. What I want to communicate with it is that in abstract, we aggregate logs from the live site, put them on hdfs. Then from there we crunch them to build internal tooling and features.
+For live features we’re putting job outputs into mysql shards; for backend tools we typically use a BI database (vertica) to fill the same need.
+
+Scalding gets used at all points on the hadoop side. Parsing logs, generating recommendations and ranking datasets, and business intelligence is all either done in Scalding or will be ported to Scalding very shortly.
+
+There are a bunch of ways that people use analytics at Etsy. The way you get your answers depends on the kind of question you’re asking.
+
+I’ll go through some examples. This is a simple one. Let’s say you just want to know how many shops open up a day.
+
+That’s a pretty common question. And so somebody’s thought of it way before you, and they’ve put it on a dashboard. So you can just go look at the dashboard.
+
+Another kind of question is one about how an A/B test you’re running is doing.
+
+We do a lot of A/B testing at Etsy, so much so that we’ve built our own A/B analyzer fronted called Catapult. So for most questions relating to variants in A/B tests you can go to that.
+
+Then there are slightly more complicated questions. Like, how many of the top sellers sell vintage goods? Maybe you’re the first person to ever ask such a question.
+
+But, people have thought of questions that are kind of similar to it before. And in most of those cases you can go ask the BI database. 
+
+And then there are questions that are even farther out there. Cases where you’re probably the first person to ask not just this specifically, but you’re also probably the first person to ask any question even similar to it. 
+Like this one. Etsy gets traffic to items that are sold. How often could we redirect that traffic to items that have close tags and titles?
+
+That’s the kind of thing you’d use scalding to answer today. We have the data in theory, but we haven’t normalized it and put it in BI. Or maybe it’s too big to fit in BI.
+
+A very common kind of novel question relates to debugging A/B tests.
+
+We do a ton of that with scalding too.
+
+I conceptualize our data universe as having three domains.
+
+There are questions we’ve anticipated, questions we didn’t anticipate, and then there are permanent systems.
+
+Like I said, we have tooling support for the first domain. And we use scalding for the second two.
+
+That’s questions where the data needed to get an answer is in a relatively raw form, which I’ll wave my hands and call analysis.
+And then we also build features and systems with scalding, which is more like what I’d call “engineering.” We do work for ranking, for recommendations, and so on in scalding.
+
+Let me give you some idea for how big of a thing this is.
+
+It’s pretty big, I guess. When I quit we had about 800 scalding jobs in source control. And if everyone is like me, there are probably twice as many in working directories, not committed.
+Only about 90 of those, though, run as part of our nightly batch process.
+
+58 people had written scalding jobs
+
+And 14 of them figured out how to use Algebird. Etsy’s engineering team, by the way, is like 150 programmers. 
+
+This histogram showing how many jobs people have written is about what you’d expect. There’s a small group of people like me who have written a ton of jobs. And most people have written one or two jobs.
+
+And the way it breaks down across the domains is like this. Most of the people using scalding are using to answer analytics questions. The experts tend to be the people building systems with scalding.
+
+So why would we pick scalding?
+
+Well, we didn’t really pick it on purpose. It was an accident.
+
+To explain how that accident happened I guess I first have to explain how we got started with analytics
+
+And that was kind of an accident too. We didn’t necessarily set out to build something to replace Google Analytics.
+
+What we did do was buy an advertising startup called Adtuitive back in 2009.
+
+And those guys brought something with them called cascading.jruby. For our purposes you can consider this to be pretty close to Pig, but using JRuby. 
+
+This is a really simple example of a job written in cascading.jruby. Hopefully you’ll just believe me that the Java equivalent would be Byzantine. 
+
+The thing we wanted to get out of that acquisition this feature. Paid promoted listings that you see when you search on Etsy. In the beginning we pretty much just wanted to build whatever we needed to have this.
+
+But do that we needed things like impression logging and fronted feedback. So we started collecting event beacons from our frontend.
+
+And shipped those beacon logs to hdfs and turned them into event logs.
+
+And we sessionized the event logs and made visit logs out of them.
+
+That decision to make a table for visits, with a row per user session, turned out to be important. Our data is stored as serialized sequences of events inside cascading tuples.
+
+So even though we just wanted this feature, well, what the hell did we just do. We just started building an analytics system I guess.
+
+The next thing we knew we had a proprietary tool for analyzing AB tests. Go figure.
+
+By 2013 we definitely had our own giant analytics stack. It was built, racked, and debugged. And It was right about then that scalding blew the whole thing to smithereens.
+
+The thing that caused this was that we had hired Avi Bryant, who some of you may know as one of the authors of scalding. And something of a group theory crank. And just an all-around amazing smart guy.
+
+And as an amazing smart guy, when Avi joined Etsy he had some cover to get a little rogue with things.
+
+And what he did with that cover was that he added scalding to the build. And then he started trying to make things with it. 
+Etsy’s not bureaucratic in any way I understand the word. But in theory there’s supposed to be at least some discussion before you start using a new framework. That didn’t happen at all with Scalding.
+
+And immediately after this, he up and quit. So the force of his intellect and personality doesn’t explain scalding’s runaway success. If that’s all it was about everyone would have stopped using it the minute he left. But the opposite of that happened.
+
+About a year ago we had this giant cascading.jruby system, which was starting to get mature.
+
+But by last October the official policy was to rewrite the few pieces that were left in Scalding.
+
+There’s a technical reason this happened, which I think is interesting, but at the same time it’s pretty simple.
+
+I think it’s simple enough that I can show it to you in a couple of examples. Let’s say that we want to count how many visits searched for any given search term.
+
+In other words we want to find every search and every visit, and produce a table like this. Search terms to the number of visits that entered them.
+
+The cascading.jruby job is really simple and straightforward. It looks like this. Don’t worry about understanding it or anything, the point is that it’s short and easy.
+
+And the equivalent scalding job is also really short and simple.
+
+Conceptually they’re both just doing this.
+
+You unroll the search events, then you grab the search terms out of them, then you just group and count.
+
+And both scalding and cascading.jruby manage to factor that into one mapreduce step. And in this case they both perform identically.
+
+But you can start to see the difference if you add just one more layer of complexity. Let’s say that we wanted to count up the search terms again, but this time relate them to purchases that happen after them in visits.
+
+Like this. We want a table showing how many visits searched for a thing, and another column giving how many of those visits bought something.
+
+In this case the scalding job is not that much more complicated. It’s still just about this long.
+
+And scalding manages to get this done in one mapreduce step again. It’s just unrolling the searches out of the visits like it was before, and grouping with a sum.
+
+The jruby job, on the other hand, no longer fits on the slide. It’s in this gist if anyone wants to look at it.
+
+I can show you what it does schematically. You make two branches, one for the searches and one for the purchases. Then you cross join them and filter that shit down. And then you wind up with a branch for conversions per search term and a branch for visits per term, and you join those back together to get your answer.
+
+So the pure cascading.jruby solution is more complicated. And it also turns out to be a lot slower, too. Cascading doesn’t have a query optimizer, and this might be a lot closer if it did. But it doesn’t, so jruby winds up being done in many more mapreduce steps and takes like eight times longer.
+
+If we go back to the scalding code for a second
+
+This here is the feature that killed cascading jruby. We just wrote a cascading user-defined function without even having to realize that that’s what we were doing.
+
+Now it’s not impossible to fix this in cascading.jruby, or in other frameworks that don’t give you easy access to UDF’s.
+
+You can indeed go write a cascading operation to do the same thing and use it from those.
+
+But in reality, even though it comes up constantly, nobody wants to do that. You have to change files, and you have to change programming languages. Those hurdles are enough to make people write slower jobs.
+
+For example we had one job that was a major resource problem in JRuby, which was taking seven hours to run every night. Someone rewrote it in scalding in a day or two and got it down to 20 minutes. The problem wasn’t that anything was impossible in cascading.jruby. The point is merely that scalding makes doing it the right way feel natural.
+
+So easy user defined functions swept all before them.
+
+But I don’t think scalding is all peaches and cream.
+
+You could say we only have two complaints.
+
+This is a talk about scalding. So I’m going to spare you my list of cascading gripes. You probably have your own. 
+I will say that if you do, using a DSL on top of cascading doesn’t help with any of them.
+
+Very flippantly, this is basically the problem. Scala is too far from what most of our engineers are using on a daily basis. It’s too weird. 
+I assure you Kellan’s not this crotchety in reality. And he’s probably mad at me for paraphrasing this from memory.
+
+I firmly believe that analytics is for everyone. I don’t mean statistical modeling, or machine learning, or things like that. But I do think that asking straightforward questions about the thing you’re tasked with building should be for everyone.
+
+What I mean by that is, let’s say we have a project to do.
+
+Etsy’s a relatively enlightened place, by software industry standards anyway. So everyone gets some time at the beginning and the end of that project to do quote-unquote “analysis.” It's "thinking time." And the stuff called "work" gets done in the middle.
+
+But I think this more accurately describes reality. We’re all still carrying the baggage of 20th century software around with us. So analysis up front, which you’d do to see if you can make a case for doing the feature at all, feels like you’re not working. 
+And the stuff in the middle feels like you’re really making progress. Even if it’s progress on something that could never actually work.
+
+That’s how it is everywhere, more or less. This is the social framework everybody’s working inside of. So as somebody who really believes that analytics up front is powerful, I want to give everyone the best chance possible.
+
+And scala is just too different from what other Etsy programmers are using day to day. Don’t mistake this as me saying they’re not smart enough, because they are. And it's not that learning FP wouldn't be good for everyone, because I think it is. And it's not that functional programming is fundamentally too hard, or anything like that. It’s just a statement of fact. Most programmers I know are not experienced with functional programming, and scala shares many functional idioms.
+
+So the analysis process winds up looking like this. Between asking the question and getting an answer there’s this weird period in the middle where you have to learn a bunch of category theory. Sure it’s good for them, or something. But it’s also going to stop them from getting their answer. 
+
+Ideally things would look more like this.
+
+So someone should go build that.
+
