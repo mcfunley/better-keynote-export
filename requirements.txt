@@ -1,3 +1,7 @@
-reportlab==3.0
-wsgiref==0.1.2
+PyPDF2==1.20
 appscript==1.0.1
+pdfminer==20131113
+python-snappy==0.5
+reportlab==3.0
+requests==2.2.1
+wsgiref==0.1.2

@@ -9,6 +9,7 @@ from glob import glob
 import appscript
 from argparse import ArgumentParser
 from contextlib import closing
+from notereader import NoteReader
 
 
 class SlideFixer(object):
@@ -76,18 +77,28 @@ class SlideFixer(object):
             })
         
 
-def notes_from_file(fn):
-    return open(fn, 'r').read().split('\n\n')
+def notes_from_file(fn, sep):
+    return open(fn, 'r').read().split(sep)
 
             
 def main():
     ap = ArgumentParser()
     ap.add_argument('-k', '--keynote', help="Path to the keynote to convert")
-    ap.add_argument('-n', '--notes', help="Path to the notes file.")
+    ap.add_argument(
+        '-n', '--notes-file', help="Path to the notes file.",
+        default=None
+    )
+    ap.add_argument('-s', '--notes-file-separator', default='\n\n')
     ap.add_argument('-o', '--outdir', help="Where to put the output.")
 
     args = ap.parse_args()
-    notes = notes_from_file(args.notes)
+
+    if args.notes_file:
+        print 'Reading notes from file:', args.notes_file
+        notes = notes_from_file(args.notes_file, args.notes_file_separator)
+    else:
+        notes = NoteReader().read(args.keynote)
+    
     SlideFixer(args.keynote, notes, args.outdir).run()
     
 
