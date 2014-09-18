@@ -14,11 +14,12 @@ from contextlib import closing
 class SlideFixer(object):
     def __init__(self, keynote, notes, outdir):
         self.keynote = os.path.abspath(keynote)
-        print self.keynote
         self.notes = notes
         self.outdir = os.path.abspath(outdir)
     
     def run(self):
+        print 'Processing', self.keynote
+        
         self.make_dirs()
         self.export()
         self.emit_pdf()
@@ -43,12 +44,11 @@ class SlideFixer(object):
         s.fontSize = 24
         s.leading = 24
 
-        notes = open(self.notes, 'r').read().split('\n\n')
         c = canvas.Canvas(self.outfile, pagesize=(1024, 1024))
         c.setFont('Courier', 80)
         c.setStrokeColorRGB(0,0,0)
         sbot = 1024 - 768
-        for slide, note in zip(glob('%s/*jpg' % self.slidesdir), notes):
+        for slide, note in zip(glob('%s/*jpg' % self.slidesdir), self.notes):
             c.drawImage(slide, 0, sbot)
             c.line(0, sbot, 1024, sbot)
             if note:
@@ -58,6 +58,7 @@ class SlideFixer(object):
                 p.drawOn(c, 10, sbot - 10)
             c.showPage()
         c.save()
+        
 
     def export(self):            
         keynote = appscript.app('Keynote')
@@ -75,13 +76,19 @@ class SlideFixer(object):
             })
         
 
+def notes_from_file(fn):
+    return open(fn, 'r').read().split('\n\n')
+
+            
 def main():
     ap = ArgumentParser()
     ap.add_argument('-k', '--keynote', help="Path to the keynote to convert")
     ap.add_argument('-n', '--notes', help="Path to the notes file.")
     ap.add_argument('-o', '--outdir', help="Where to put the output.")
+
     args = ap.parse_args()
-    SlideFixer(args.keynote, args.notes, args.outdir).run()
+    notes = notes_from_file(args.notes)
+    SlideFixer(args.keynote, notes, args.outdir).run()
     
 
 if __name__ == '__main__':    
