@@ -7,6 +7,6 @@ This is a crappy script that provides a fix for Keynote 13's "export with notes"
 
 One of my talks is provided here as a sample. To run the sample:
 
-    ./fix-slides.py --keynote sample/scalding-at-etsy-v2.key --notes sample/notes.txt --outdir out
+    ./fix-slides.py --keynote sample/scalding-at-etsy-v2.key --notes-file sample/notes.txt --outdir out
 	
 That should create `out/out.pdf`.

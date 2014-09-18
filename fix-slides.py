@@ -17,7 +17,7 @@ class SlideFixer(object):
         self.keynote = os.path.abspath(keynote)
         self.notes = notes
         self.outdir = os.path.abspath(outdir)
-    
+        
     def run(self):
         print 'Processing', self.keynote
         
@@ -53,7 +53,7 @@ class SlideFixer(object):
             c.drawImage(slide, 0, sbot)
             c.line(0, sbot, 1024, sbot)
             if note:
-                p = Paragraph(note, s)
+                p = Paragraph(note.replace('\n', '<br/>'), s)
                 p.wrapOn(c, 1000, sbot)
                 p.breakLines(1000)
                 p.drawOn(c, 10, sbot - 10)
@@ -88,14 +88,15 @@ def main():
         '-n', '--notes-file', help="Path to the notes file.",
         default=None
     )
-    ap.add_argument('-s', '--notes-file-separator', default='\n\n')
+    ap.add_argument('-s', '--notes-file-separator', default=None)
     ap.add_argument('-o', '--outdir', help="Where to put the output.")
 
     args = ap.parse_args()
 
     if args.notes_file:
         print 'Reading notes from file:', args.notes_file
-        notes = notes_from_file(args.notes_file, args.notes_file_separator)
+        sep = args.notes_file_separator + '\n' or '\n\n'
+        notes = notes_from_file(args.notes_file, sep)
     else:
         notes = NoteReader().read(args.keynote)
     
