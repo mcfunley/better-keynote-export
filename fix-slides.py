@@ -13,10 +13,11 @@ from notereader import NoteReader
 
 
 class SlideFixer(object):
-    def __init__(self, keynote, notes, outdir):
+    def __init__(self, keynote, notes, outdir, pagesize):
         self.keynote = os.path.abspath(keynote)
         self.notes = notes
         self.outdir = os.path.abspath(outdir)
+        self.pagesize = pagesize
         
     def run(self):
         print 'Processing', self.keynote
@@ -45,18 +46,22 @@ class SlideFixer(object):
         s.fontSize = 24
         s.leading = 24
 
-        c = canvas.Canvas(self.outfile, pagesize=(1024, 1024))
+        notespace = 256
+        img_w, img_h = self.pagesize
+        pagesize = (img_w, img_h + notespace)
+
+        c = canvas.Canvas(self.outfile, pagesize=pagesize)
         c.setFont('Courier', 80)
         c.setStrokeColorRGB(0,0,0)
-        sbot = 1024 - 768
+
         for slide, note in zip(glob('%s/*jpg' % self.slidesdir), self.notes):
-            c.drawImage(slide, 0, sbot)
-            c.line(0, sbot, 1024, sbot)
+            c.drawImage(slide, 0, notespace, img_w, img_h, preserveAspectRatio=True)
+            c.line(0, notespace, img_w, notespace)
             if note:
                 p = Paragraph(note.replace('\n', '<br/>'), s)
-                p.wrapOn(c, 1000, sbot)
-                p.breakLines(1000)
-                p.drawOn(c, 10, sbot - 10)
+                p.wrapOn(c, img_w - 20, notespace)
+                p.breakLines(img_w - 20)
+                p.drawOn(c, 10, notespace - 10)
             c.showPage()
         c.save()
         
@@ -90,6 +95,8 @@ def main():
     )
     ap.add_argument('-s', '--notes-file-separator', default=None)
     ap.add_argument('-o', '--outdir', help="Where to put the output.")
+    ap.add_argument('-p', '--pagesize', help='The size of the pages',
+                    default='1024x768')
 
     args = ap.parse_args()
 
@@ -99,8 +106,10 @@ def main():
         notes = notes_from_file(args.notes_file, sep)
     else:
         notes = NoteReader().read(args.keynote)
+
+    pagesize = tuple([int(s) for s in args.pagesize.split('x')])
     
-    SlideFixer(args.keynote, notes, args.outdir).run()
+    SlideFixer(args.keynote, notes, args.outdir, pagesize).run()
     
 
 if __name__ == '__main__':    

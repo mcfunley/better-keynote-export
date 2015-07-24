@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import snappy
 import os
 from zipfile import ZipFile
