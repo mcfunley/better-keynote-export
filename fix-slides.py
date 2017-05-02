@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from reportlab.pdfgen import canvas
 from reportlab.platypus import Paragraph, Table, TableStyle
+from reportlab.lib.colors import HexColor
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_LEFT
 import sys
@@ -55,8 +56,13 @@ class SlideFixer(object):
         c.setStrokeColorRGB(0,0,0)
 
         for slide, note in zip(glob('%s/*jpeg' % self.slidesdir), self.notes):
+            # fill the page with white
+            c.setFillColor(HexColor('#ffffff'))
+            c.rect(0, 0, img_w, img_h + notespace, fill=1)
+
             c.drawImage(slide, 0, notespace, img_w, img_h, preserveAspectRatio=True)
             c.line(0, notespace, img_w, notespace)
+
             if note:
                 p = Paragraph(note.replace('\n', '<br/>'), s)
                 p.wrapOn(c, img_w - 20, notespace)
