@@ -44,8 +44,8 @@ class SlideFixer(object):
         s = ParagraphStyle('note')
         s.textColor = 'black'
         s.alignment = TA_LEFT
-        s.fontSize = 24
-        s.leading = 24
+        s.fontSize = 36
+        s.leading = 36
 
         notespace = 256
         img_w, img_h = self.pagesize
