@@ -18,12 +18,12 @@ class SlideFixer(object):
         self.notes = notes
         self.outdir = os.path.abspath(outdir)
         self.pagesize = pagesize
-        
+
     def run(self):
         print 'Processing', self.keynote
-        
+
         self.make_dirs()
-        self.export()
+        #self.export()
         self.emit_pdf()
 
     @property
@@ -33,12 +33,12 @@ class SlideFixer(object):
     @property
     def outfile(self):
         return os.path.join(self.outdir, 'out.pdf')
-        
+
     def make_dirs(self):
         for d in (self.outdir, self.slidesdir,):
             if not os.path.isdir(d):
                 os.mkdir(d)
-        
+
     def emit_pdf(self):
         s = ParagraphStyle('note')
         s.textColor = 'black'
@@ -54,7 +54,7 @@ class SlideFixer(object):
         c.setFont('Courier', 80)
         c.setStrokeColorRGB(0,0,0)
 
-        for slide, note in zip(glob('%s/*jpg' % self.slidesdir), self.notes):
+        for slide, note in zip(glob('%s/*jpeg' % self.slidesdir), self.notes):
             c.drawImage(slide, 0, notespace, img_w, img_h, preserveAspectRatio=True)
             c.line(0, notespace, img_w, notespace)
             if note:
@@ -64,9 +64,9 @@ class SlideFixer(object):
                 p.drawOn(c, 10, notespace - 10)
             c.showPage()
         c.save()
-        
 
-    def export(self):            
+
+    def export(self):
         keynote = appscript.app('Keynote')
         outpath = appscript.mactypes.File(self.slidesdir)
         k = appscript.k
@@ -76,16 +76,15 @@ class SlideFixer(object):
                 k.export_style: k.IndividualSlides,
                 k.compression_factor: 0.9,
                 k.image_format: k.JPEG,
-                k.movie_format: k.large,
                 k.all_stages: True,
                 k.skipped_slides: False
             })
-        
+
 
 def notes_from_file(fn, sep):
     return open(fn, 'r').read().split(sep)
 
-            
+
 def main():
     ap = ArgumentParser()
     ap.add_argument('-k', '--keynote', help="Path to the keynote to convert")
@@ -95,8 +94,8 @@ def main():
     )
     ap.add_argument('-s', '--notes-file-separator', default=None)
     ap.add_argument('-o', '--outdir', help="Where to put the output.")
-    ap.add_argument('-p', '--pagesize', help='The size of the pages',
-                    default='1024x768')
+    ap.add_argument('-p', '--pagesize', help='The size of the pages.',
+                    default='1920x1080')
 
     args = ap.parse_args()
 
@@ -108,10 +107,9 @@ def main():
         notes = NoteReader().read(args.keynote)
 
     pagesize = tuple([int(s) for s in args.pagesize.split('x')])
-    
+
     SlideFixer(args.keynote, notes, args.outdir, pagesize).run()
-    
 
-if __name__ == '__main__':    
+
+if __name__ == '__main__':
     main()
-
