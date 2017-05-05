@@ -9,21 +9,20 @@ from glob import glob
 import appscript
 from argparse import ArgumentParser
 from contextlib import closing
-from notereader import NoteReader
 
 
 class SlideFixer(object):
-    def __init__(self, keynote, notes, outdir, pagesize):
+    def __init__(self, keynote, outdir, pagesize):
         self.keynote = os.path.abspath(keynote)
-        self.notes = notes
         self.outdir = os.path.abspath(outdir)
         self.pagesize = pagesize
+        self.notes = None
 
     def run(self):
         print 'Processing', self.keynote
 
         self.make_dirs()
-        #self.export()
+        self.export()
         self.emit_pdf()
 
     @property
@@ -44,7 +43,7 @@ class SlideFixer(object):
         s.textColor = 'black'
         s.alignment = TA_LEFT
         s.fontSize = 36
-        s.leading = 36
+        s.leading = 38
 
         notespace = 256
         img_w, img_h = self.pagesize
@@ -77,6 +76,8 @@ class SlideFixer(object):
         k = appscript.k
         keynote_file = appscript.mactypes.File(self.keynote)
         with closing(keynote.open(keynote_file)) as doc:
+            self.notes = doc.slides.presenter_notes()
+
             doc.export(as_=k.slide_images, to=outpath, with_properties = {
                 k.export_style: k.IndividualSlides,
                 k.compression_factor: 0.9,
@@ -94,28 +95,15 @@ def main():
     ap = ArgumentParser()
     ap.add_argument('-k', '--keynote', help="Path to the keynote to convert",
                     required=True)
-    ap.add_argument(
-        '-n', '--notes-file', help="Path to the notes file.",
-        default=None
-    )
-    ap.add_argument('-s', '--notes-file-separator', default=None)
     ap.add_argument('-o', '--outdir', help="Where to put the output.",
                     required=True)
     ap.add_argument('-p', '--pagesize', help='The size of the pages.',
                     default='1920x1080')
 
     args = ap.parse_args()
-
-    if args.notes_file:
-        print 'Reading notes from file:', args.notes_file
-        sep = args.notes_file_separator + '\n' or '\n\n'
-        notes = notes_from_file(args.notes_file, sep)
-    else:
-        notes = NoteReader().read(args.keynote)
-
     pagesize = tuple([int(s) for s in args.pagesize.split('x')])
 
-    SlideFixer(args.keynote, notes, args.outdir, pagesize).run()
+    SlideFixer(args.keynote, args.outdir, pagesize).run()
 
 
 if __name__ == '__main__':
