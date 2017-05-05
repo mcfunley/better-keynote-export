@@ -4,7 +4,6 @@ from reportlab.platypus import Paragraph, Table, TableStyle
 from reportlab.lib.colors import HexColor
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_LEFT
-import sys
 import os
 from glob import glob
 import appscript
@@ -93,13 +92,15 @@ def notes_from_file(fn, sep):
 
 def main():
     ap = ArgumentParser()
-    ap.add_argument('-k', '--keynote', help="Path to the keynote to convert")
+    ap.add_argument('-k', '--keynote', help="Path to the keynote to convert",
+                    required=True)
     ap.add_argument(
         '-n', '--notes-file', help="Path to the notes file.",
         default=None
     )
     ap.add_argument('-s', '--notes-file-separator', default=None)
-    ap.add_argument('-o', '--outdir', help="Where to put the output.")
+    ap.add_argument('-o', '--outdir', help="Where to put the output.",
+                    required=True)
     ap.add_argument('-p', '--pagesize', help='The size of the pages.',
                     default='1920x1080')
 
