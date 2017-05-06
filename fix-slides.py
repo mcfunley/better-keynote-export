@@ -12,11 +12,12 @@ from contextlib import closing
 
 
 class SlideFixer(object):
-    def __init__(self, keynote, outdir, pagesize):
+    def __init__(self, keynote, outdir, pagesize, font_size):
         self.keynote = os.path.abspath(keynote)
         self.outdir = os.path.abspath(outdir)
         self.pagesize = pagesize
         self.notes = None
+        self.font_size = font_size
 
     def run(self):
         print 'Processing', self.keynote
@@ -42,8 +43,8 @@ class SlideFixer(object):
         s = ParagraphStyle('note')
         s.textColor = 'black'
         s.alignment = TA_LEFT
-        s.fontSize = 36
-        s.leading = 38
+        s.fontSize = self.font_size
+        s.leading = 1.2 * self.font_size
 
         notespace = 256
         img_w, img_h = self.pagesize
@@ -99,11 +100,13 @@ def main():
                     required=True)
     ap.add_argument('-p', '--pagesize', help='The size of the pages.',
                     default='1920x1080')
+    ap.add_argument('-f', '--font-size', help='Font size for notes',
+                    type=int, dest='font_size', default=36)
 
     args = ap.parse_args()
     pagesize = tuple([int(s) for s in args.pagesize.split('x')])
 
-    SlideFixer(args.keynote, args.outdir, pagesize).run()
+    SlideFixer(args.keynote, args.outdir, pagesize, args.font_size).run()
 
 
 if __name__ == '__main__':
