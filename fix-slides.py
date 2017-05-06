@@ -12,16 +12,16 @@ from contextlib import closing
 
 
 class SlideFixer(object):
-    def __init__(self, keynote, outdir, pagesize, font_size):
+    def __init__(self, keynote, outdir, pagesize, font_size, notespace):
         self.keynote = os.path.abspath(keynote)
         self.outdir = os.path.abspath(outdir)
         self.pagesize = pagesize
         self.notes = None
         self.font_size = font_size
+        self.notespace = notespace
 
     def run(self):
         print 'Processing', self.keynote
-
         self.make_dirs()
         self.export()
         self.emit_pdf()
@@ -46,9 +46,8 @@ class SlideFixer(object):
         s.fontSize = self.font_size
         s.leading = 1.2 * self.font_size
 
-        notespace = 256
         img_w, img_h = self.pagesize
-        pagesize = (img_w, img_h + notespace)
+        pagesize = (img_w, img_h + self.notespace)
 
         c = canvas.Canvas(self.outfile, pagesize=pagesize)
         c.setFont('Courier', 80)
@@ -57,16 +56,16 @@ class SlideFixer(object):
         for slide, note in zip(glob('%s/*jpeg' % self.slidesdir), self.notes):
             # fill the page with white
             c.setFillColor(HexColor('#ffffff'))
-            c.rect(0, 0, img_w, img_h + notespace, fill=1)
+            c.rect(0, 0, img_w, img_h + self.notespace, fill=1)
 
-            c.drawImage(slide, 0, notespace, img_w, img_h, preserveAspectRatio=True)
-            c.line(0, notespace, img_w, notespace)
+            c.drawImage(slide, 0, self.notespace, img_w, img_h, preserveAspectRatio=True)
+            c.line(0, self.notespace, img_w, self.notespace)
 
             if note:
                 p = Paragraph(note.replace('\n', '<br/>'), s)
-                p.wrapOn(c, img_w - 20, notespace)
+                p.wrapOn(c, img_w - 20, self.notespace)
                 p.breakLines(img_w - 20)
-                p.drawOn(c, 10, notespace - 10)
+                p.drawOn(c, 10, self.notespace - 10)
             c.showPage()
         c.save()
 
@@ -102,11 +101,14 @@ def main():
                     default='1920x1080')
     ap.add_argument('-f', '--font-size', help='Font size for notes',
                     type=int, dest='font_size', default=36)
+    ap.add_argument('-s', '--notespace', help='Height of space for notes',
+                    type=int, dest='notespace', default=256)
 
     args = ap.parse_args()
     pagesize = tuple([int(s) for s in args.pagesize.split('x')])
 
-    SlideFixer(args.keynote, args.outdir, pagesize, args.font_size).run()
+    SlideFixer(args.keynote, args.outdir, pagesize,
+               args.font_size, args.notespace).run()
 
 
 if __name__ == '__main__':
