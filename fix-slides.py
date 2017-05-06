@@ -1,27 +1,36 @@
 #!/usr/bin/env python
-from reportlab.pdfgen import canvas
-from reportlab.platypus import Paragraph, Table, TableStyle
-from reportlab.lib.colors import HexColor
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.lib.enums import TA_LEFT
-import os
-from glob import glob
 import appscript
 from argparse import ArgumentParser
 from contextlib import closing
+from glob import glob
+import math
+import os
+from reportlab.lib.colors import HexColor
+from reportlab.lib.enums import TA_LEFT
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.utils import simpleSplit
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen import canvas
+from reportlab.platypus import Paragraph, Table, TableStyle
+
+
+pdfmetrics.registerFont(TTFont('SanFrancisco', 'SanFrancisco-Regular.ttf'))
 
 
 class SlideFixer(object):
-    def __init__(self, keynote, outdir, pagesize, font_size, notespace):
+    def __init__(self, keynote, outdir, pagesize, font_size):
         self.keynote = os.path.abspath(keynote)
         self.outdir = os.path.abspath(outdir)
         self.pagesize = pagesize
         self.notes = None
         self.font_size = font_size
-        self.notespace = notespace
+        self.leading = 1.2 * font_size
+        self.notepadding = 10
+        self.font = 'SanFrancisco'
 
     def run(self):
-        print 'Processing', self.keynote
+        print('Processing', self.keynote)
         self.make_dirs()
         self.export()
         self.emit_pdf()
@@ -39,19 +48,33 @@ class SlideFixer(object):
             if not os.path.isdir(d):
                 os.mkdir(d)
 
+    @property
+    def notewidth(self):
+        w, _ = self.pagesize
+        return w - self.notepadding * 2
+
+    def compute_notespace(self):
+        tallest = -1
+        for n in self.notes:
+            lines = simpleSplit(n, self.font, self.font_size, self.notewidth)
+            tallest = max(tallest, len(lines))
+        return ((tallest + 1) * self.leading) + (self.notepadding * 2)
+
     def emit_pdf(self):
+        self.notespace = self.compute_notespace()
+
         s = ParagraphStyle('note')
+        s.fontName = self.font
         s.textColor = 'black'
         s.alignment = TA_LEFT
         s.fontSize = self.font_size
-        s.leading = 1.2 * self.font_size
+        s.leading = self.leading
 
         img_w, img_h = self.pagesize
         pagesize = (img_w, img_h + self.notespace)
 
         c = canvas.Canvas(self.outfile, pagesize=pagesize)
-        c.setFont('Courier', 80)
-        c.setStrokeColorRGB(0,0,0)
+        c.setStrokeColorRGB(0, 0, 0)
 
         for slide, note in zip(glob('%s/*jpeg' % self.slidesdir), self.notes):
             # fill the page with white
@@ -63,9 +86,9 @@ class SlideFixer(object):
 
             if note:
                 p = Paragraph(note.replace('\n', '<br/>'), s)
-                p.wrapOn(c, img_w - 20, self.notespace)
-                p.breakLines(img_w - 20)
-                p.drawOn(c, 10, self.notespace - 10)
+                p.wrapOn(c, self.notewidth, self.notespace)
+                p.breakLines(self.notewidth)
+                p.drawOn(c, self.notepadding, self.notespace - self.notepadding)
             c.showPage()
         c.save()
 
@@ -101,14 +124,11 @@ def main():
                     default='1920x1080')
     ap.add_argument('-f', '--font-size', help='Font size for notes',
                     type=int, dest='font_size', default=36)
-    ap.add_argument('-s', '--notespace', help='Height of space for notes',
-                    type=int, dest='notespace', default=256)
 
     args = ap.parse_args()
     pagesize = tuple([int(s) for s in args.pagesize.split('x')])
 
-    SlideFixer(args.keynote, args.outdir, pagesize,
-               args.font_size, args.notespace).run()
+    SlideFixer(args.keynote, args.outdir, pagesize, args.font_size).run()
 
 
 if __name__ == '__main__':
