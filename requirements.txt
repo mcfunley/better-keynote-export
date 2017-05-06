@@ -1,2 +1,4 @@
 appscript==1.0.1
+Jinja2==2.9.6
+MarkupSafe==1.0
 reportlab==3.0

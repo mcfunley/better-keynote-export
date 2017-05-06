@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title></title>
+  </head>
+  <body>
+
+    <ul>
+      {% for s in slides %}
+        <li>
+          <img src="{{ s['image'] }}" />
+          {{ s['note'] | replace('\n', '<br />') }}
+        </li>
+      {% endfor %}
+    </ul>
+
+  </body>
+</html>

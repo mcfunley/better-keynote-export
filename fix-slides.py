@@ -3,6 +3,7 @@ import appscript
 from argparse import ArgumentParser
 from contextlib import closing
 from glob import glob
+from jinja2 import Template
 import math
 import os
 from reportlab.lib.colors import HexColor
@@ -15,7 +16,8 @@ from reportlab.pdfgen import canvas
 from reportlab.platypus import Paragraph, Table, TableStyle
 
 
-pdfmetrics.registerFont(TTFont('SanFrancisco', 'SanFrancisco-Regular.ttf'))
+sf = TTFont('SanFrancisco', 'resources/SanFrancisco-Regular.ttf')
+pdfmetrics.registerFont(sf)
 
 
 class Options(object):
@@ -32,90 +34,93 @@ class Options(object):
         return os.path.join(self.outdir, 'slides')
 
     @property
-    def outfile(self):
-        return os.path.join(self.outdir, 'out.pdf')
-
-    @property
     def note_width(self):
         w, _ = self.pagesize
         return w - self.notepadding * 2
 
 
-class Exporter(object):
-    def __init__(self, keynote, opts):
-        self.keynote = os.path.abspath(keynote)
-        self.notes = None
-        self.opts = opts
-
-    def run(self):
-        print('Processing', self.keynote)
-        self.make_dirs()
-        self.export()
-        self.emit_pdf()
-
-    def make_dirs(self):
-        for d in (self.opts.outdir, self.opts.slidesdir,):
-            if not os.path.isdir(d):
-                os.mkdir(d)
-
-    def compute_note_height(self):
-        tallest = -1
-        for n in self.notes:
-            lines = simpleSplit(n, self.opts.font, self.opts.font_size,
-                                self.opts.note_width)
-            tallest = max(tallest, len(lines))
-        return ((tallest + 1) * self.opts.leading) + (self.opts.notepadding * 2)
-
-    def emit_pdf(self):
-        note_height = self.compute_note_height()
-
-        s = ParagraphStyle('note')
-        s.fontName = self.opts.font
-        s.textColor = 'black'
-        s.alignment = TA_LEFT
-        s.fontSize = self.opts.font_size
-        s.leading = self.opts.leading
-
-        img_w, img_h = self.opts.pagesize
-        pagesize = (img_w, img_h + note_height)
-
-        c = canvas.Canvas(self.opts.outfile, pagesize=pagesize)
-        c.setStrokeColorRGB(0, 0, 0)
-
-        for slide, note in zip(glob('%s/*jpeg' % self.opts.slidesdir),
-                               self.notes):
-            # fill the page with white
-            c.setFillColor(HexColor('#ffffff'))
-            c.rect(0, 0, img_w, img_h + note_height, fill=1)
-
-            c.drawImage(slide, 0, note_height, img_w, img_h, preserveAspectRatio=True)
-            c.line(0, note_height, img_w, note_height)
-
-            if note:
-                p = Paragraph(note.replace('\n', '<br/>'), s)
-                p.wrapOn(c, self.opts.note_width, note_height)
-                p.breakLines(self.opts.note_width)
-                p.drawOn(c, self.opts.notepadding,
-                         note_height - self.opts.notepadding)
-            c.showPage()
-        c.save()
+def slides_and_notes(opts, notes):
+    return zip(glob('%s/*jpeg' % opts.slidesdir), notes)
 
 
-    def export(self):
-        keynote = appscript.app('Keynote')
-        outpath = appscript.mactypes.File(self.opts.slidesdir)
-        k = appscript.k
-        keynote_file = appscript.mactypes.File(self.keynote)
-        with closing(keynote.open(keynote_file)) as doc:
-            self.notes = doc.slides.presenter_notes()
+def make_dirs(opts):
+    for d in (opts.outdir, opts.slidesdir,):
+        if not os.path.isdir(d):
+            os.mkdir(d)
 
-            doc.export(as_=k.slide_images, to=outpath, with_properties = {
-                k.export_style: k.IndividualSlides,
-                k.compression_factor: 0.9,
-                k.image_format: k.JPEG,
-                k.all_stages: True,
-                k.skipped_slides: False
-            })
+
+def generate_pdf(opts, notes):
+    outfile = os.path.join(opts.outdir, 'out.pdf')
+
+    tallest_note = -1
+    for n in notes:
+        lines = simpleSplit(n, opts.font, opts.font_size, opts.note_width)
+        tallest_note = max(tallest_note, len(lines))
+
+    note_height = ((tallest_note + 1) * opts.leading) + (opts.notepadding * 2)
+
+    s = ParagraphStyle('note')
+    s.fontName = opts.font
+    s.textColor = 'black'
+    s.alignment = TA_LEFT
+    s.fontSize = opts.font_size
+    s.leading = opts.leading
+
+    img_w, img_h = opts.pagesize
+    pagesize = (img_w, img_h + note_height)
+
+    c = canvas.Canvas(outfile, pagesize=pagesize)
+    c.setStrokeColorRGB(0, 0, 0)
+
+    for slide, note in slides_and_notes(opts, notes):
+        c.setFillColor(HexColor('#ffffff'))
+        c.rect(0, 0, img_w, img_h + note_height, fill=1)
+
+        c.drawImage(slide, 0, note_height, img_w, img_h, preserveAspectRatio=True)
+        c.line(0, note_height, img_w, note_height)
+
+        if note:
+            p = Paragraph(note.replace('\n', '<br/>'), s)
+            p.wrapOn(c, opts.note_width, note_height)
+            p.breakLines(opts.note_width)
+            p.drawOn(c, opts.notepadding, note_height - opts.notepadding)
+        c.showPage()
+    c.save()
+
+
+def export_keynote(filename, opts):
+    filename = os.path.abspath(filename)
+
+    keynote = appscript.app('Keynote')
+    outpath = appscript.mactypes.File(opts.slidesdir)
+    k = appscript.k
+    keynote_file = appscript.mactypes.File(filename)
+
+    with closing(keynote.open(keynote_file)) as doc:
+        notes = doc.slides.presenter_notes()
+
+        doc.export(as_=k.slide_images, to=outpath, with_properties = {
+            k.export_style: k.IndividualSlides,
+            k.compression_factor: 0.9,
+            k.image_format: k.JPEG,
+            k.all_stages: True,
+            k.skipped_slides: False
+        })
+
+    return notes
+
+
+def generate_html(opts, notes):
+    def imgpath(s):
+        return s.replace(opts.outdir + '/', '')
+
+    t = Template(open('resources/site.jinja', 'r').read())
+    s = t.render(slides=[
+        { 'image': imgpath(s), 'note': n }
+        for s, n in slides_and_notes(opts, notes)
+    ])
+    outfile = os.path.join(opts.outdir, 'out.html')
+    open(outfile, 'w').write(s)
 
 
 def main():
@@ -131,9 +136,13 @@ def main():
 
     args = ap.parse_args()
     pagesize = tuple([int(s) for s in args.pagesize.split('x')])
-
     opts = Options(args.outdir, pagesize, args.font_size)
-    Exporter(args.keynote, opts).run()
+
+    print('Processing', args.keynote)
+    make_dirs(opts)
+    notes = export_keynote(args.keynote, opts)
+    generate_pdf(opts, notes)
+    generate_html(opts, notes)
 
 
 if __name__ == '__main__':
