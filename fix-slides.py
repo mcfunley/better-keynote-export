@@ -18,22 +18,14 @@ from reportlab.platypus import Paragraph, Table, TableStyle
 pdfmetrics.registerFont(TTFont('SanFrancisco', 'SanFrancisco-Regular.ttf'))
 
 
-class SlideFixer(object):
-    def __init__(self, keynote, outdir, pagesize, font_size):
-        self.keynote = os.path.abspath(keynote)
+class Options(object):
+    def __init__(self, outdir, pagesize, font_size):
         self.outdir = os.path.abspath(outdir)
         self.pagesize = pagesize
-        self.notes = None
         self.font_size = font_size
         self.leading = 1.2 * font_size
         self.notepadding = 10
         self.font = 'SanFrancisco'
-
-    def run(self):
-        print('Processing', self.keynote)
-        self.make_dirs()
-        self.export()
-        self.emit_pdf()
 
     @property
     def slidesdir(self):
@@ -43,59 +35,75 @@ class SlideFixer(object):
     def outfile(self):
         return os.path.join(self.outdir, 'out.pdf')
 
-    def make_dirs(self):
-        for d in (self.outdir, self.slidesdir,):
-            if not os.path.isdir(d):
-                os.mkdir(d)
-
     @property
-    def notewidth(self):
+    def note_width(self):
         w, _ = self.pagesize
         return w - self.notepadding * 2
 
-    def compute_notespace(self):
+
+class Exporter(object):
+    def __init__(self, keynote, opts):
+        self.keynote = os.path.abspath(keynote)
+        self.notes = None
+        self.opts = opts
+
+    def run(self):
+        print('Processing', self.keynote)
+        self.make_dirs()
+        self.export()
+        self.emit_pdf()
+
+    def make_dirs(self):
+        for d in (self.opts.outdir, self.opts.slidesdir,):
+            if not os.path.isdir(d):
+                os.mkdir(d)
+
+    def compute_note_height(self):
         tallest = -1
         for n in self.notes:
-            lines = simpleSplit(n, self.font, self.font_size, self.notewidth)
+            lines = simpleSplit(n, self.opts.font, self.opts.font_size,
+                                self.opts.note_width)
             tallest = max(tallest, len(lines))
-        return ((tallest + 1) * self.leading) + (self.notepadding * 2)
+        return ((tallest + 1) * self.opts.leading) + (self.opts.notepadding * 2)
 
     def emit_pdf(self):
-        self.notespace = self.compute_notespace()
+        note_height = self.compute_note_height()
 
         s = ParagraphStyle('note')
-        s.fontName = self.font
+        s.fontName = self.opts.font
         s.textColor = 'black'
         s.alignment = TA_LEFT
-        s.fontSize = self.font_size
-        s.leading = self.leading
+        s.fontSize = self.opts.font_size
+        s.leading = self.opts.leading
 
-        img_w, img_h = self.pagesize
-        pagesize = (img_w, img_h + self.notespace)
+        img_w, img_h = self.opts.pagesize
+        pagesize = (img_w, img_h + note_height)
 
-        c = canvas.Canvas(self.outfile, pagesize=pagesize)
+        c = canvas.Canvas(self.opts.outfile, pagesize=pagesize)
         c.setStrokeColorRGB(0, 0, 0)
 
-        for slide, note in zip(glob('%s/*jpeg' % self.slidesdir), self.notes):
+        for slide, note in zip(glob('%s/*jpeg' % self.opts.slidesdir),
+                               self.notes):
             # fill the page with white
             c.setFillColor(HexColor('#ffffff'))
-            c.rect(0, 0, img_w, img_h + self.notespace, fill=1)
+            c.rect(0, 0, img_w, img_h + note_height, fill=1)
 
-            c.drawImage(slide, 0, self.notespace, img_w, img_h, preserveAspectRatio=True)
-            c.line(0, self.notespace, img_w, self.notespace)
+            c.drawImage(slide, 0, note_height, img_w, img_h, preserveAspectRatio=True)
+            c.line(0, note_height, img_w, note_height)
 
             if note:
                 p = Paragraph(note.replace('\n', '<br/>'), s)
-                p.wrapOn(c, self.notewidth, self.notespace)
-                p.breakLines(self.notewidth)
-                p.drawOn(c, self.notepadding, self.notespace - self.notepadding)
+                p.wrapOn(c, self.opts.note_width, note_height)
+                p.breakLines(self.opts.note_width)
+                p.drawOn(c, self.opts.notepadding,
+                         note_height - self.opts.notepadding)
             c.showPage()
         c.save()
 
 
     def export(self):
         keynote = appscript.app('Keynote')
-        outpath = appscript.mactypes.File(self.slidesdir)
+        outpath = appscript.mactypes.File(self.opts.slidesdir)
         k = appscript.k
         keynote_file = appscript.mactypes.File(self.keynote)
         with closing(keynote.open(keynote_file)) as doc:
@@ -108,10 +116,6 @@ class SlideFixer(object):
                 k.all_stages: True,
                 k.skipped_slides: False
             })
-
-
-def notes_from_file(fn, sep):
-    return open(fn, 'r').read().split(sep)
 
 
 def main():
@@ -128,7 +132,8 @@ def main():
     args = ap.parse_args()
     pagesize = tuple([int(s) for s in args.pagesize.split('x')])
 
-    SlideFixer(args.keynote, args.outdir, pagesize, args.font_size).run()
+    opts = Options(args.outdir, pagesize, args.font_size)
+    Exporter(args.keynote, opts).run()
 
 
 if __name__ == '__main__':
