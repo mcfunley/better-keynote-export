@@ -83,7 +83,7 @@ header h1 {
 }
 
 header .share {
-    margin: 40px auto 0 auto;
+    margin: 20px auto 0 auto;
 }
 footer .share {
   margin: 0 auto 40px auto;
@@ -93,11 +93,11 @@ footer .share {
 }
 
 header p {
-  padding: 0 100px;
+  padding: 0 100px 20px 100px;
 }
 @media(max-width: 700px) {
   header p {
-    padding: 0;
+    padding: 0 0 20px 0;
   }
 }
 
