@@ -130,3 +130,7 @@ table.slides img {
 footer {
   border-top: 1px solid #ccc;
 }
+footer p {
+  text-align: center;
+  font-size: 0.8rem;
+}

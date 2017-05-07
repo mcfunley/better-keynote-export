@@ -125,7 +125,7 @@ def generate_html(opts, notes):
         for s, n in slides_and_notes(opts, notes)
     ], title=opts.title, twitter_username=opts.twitter_username)
 
-    outfile = os.path.join(opts.outdir, 'out.html')
+    outfile = os.path.join(opts.outdir, 'index.html')
     open(outfile, 'w').write(s)
 
     shutil.copyfile(
