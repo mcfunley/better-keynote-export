@@ -48,4 +48,4 @@ The output path gets both a PDF file and a self-contained website that you can e
 
 You must have Keynote installed to use this.
 
-Fundamentally, this works by scripting Keynote using Applescript. The details of this helpfully changes from Keynote version to version, so if the script isn't working it might be that I haven't updated it recently and minor tweaks are needed for the latest version of Keynote. Pull requests welcome!
+Fundamentally, this works by scripting Keynote using Applescript. The details of this helpfully change from Keynote version to version. So if the script isn't working, it might be that I haven't updated it recently and minor tweaks are needed for the latest version of Keynote. Pull requests welcome!
