@@ -1,11 +1,41 @@
-This is a crappy script that provides a fix for Keynote 13's "export with notes" formatting regression. Basically,
+## better-keynote-export
 
-* This exports all of your slides as JPEG's.
-* It does this using Applescript, so it is prone to break with new versions of Keynote.
-* It compiles the JPEG's and the notes into a PDF with reasonably formatted notes.
+This is a script that can export Keynote presentations in formats that are better for sharing them as standalone documents. Natively,
 
-One of my talks is provided here as a sample. To run the sample:
+* Keynote will export slides with presenter notes as a PDF. But the resulting formatting is terrible, giving 50% of each page of the PDF up to the notes.
+* Keynote will export an HTML document, but it won't include presenter notes with it.
 
-    ./fix-slides.py --keynote sample/scalding-at-etsy-v2.key --notes-file --outdir out
+This script addresses both of these issues.
 
-That should create `out/out.pdf`.
+* It generates a nicely-formatted PDF [like this one](https://speakerdeck.com/mcfunley/deploying-often-is-a-very-good-idea), suitable for uploading to Speakerdeck or others.
+* It generates an html presentation in a minimalist, reader-friendly format inspired by [Maciej Cegłowski](http://idlewords.com/talks/)
+
+### Setup
+
+[pyenv virtualenv](https://github.com/pyenv/pyenv-virtualenv) is a reasonable way to have isolated python environments. Follow their instructions for setting that up and then do this:
+
+```
+$ pyenv virtualenv 3.6.1 better-keynote-export
+$ pyenv activate better-keynote-export
+$ pip install -r requirements.txt
+```
+
+### Usage
+
+Use `./export.py --help` to see all of the available options. Basically,
+
+```
+./export.py \
+  --keynote=<the keynote file> \
+  --outdir=<a path> \
+  --title=<the name of the presentation> \
+  --twitter-username=<your twitter username>
+```
+
+The output path gets both a PDF file and a self-contained website that you can easily host with (for example) [GitHub pages](https://pages.github.com/).
+
+### Notes
+
+You must have Keynote installed to use this.
+
+Fundamentally, this works by scripting Keynote using Applescript. The details of this helpfully changes from Keynote version to version, so if the script isn't working it might be that I haven't updated it recently and minor tweaks are needed for the latest version of Keynote. Pull requests welcome!
