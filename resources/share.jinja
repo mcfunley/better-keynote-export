@@ -1,0 +1,14 @@
+<div class="share">
+  <a class="twitter-share-button" href="https://twitter.com/intent/tweet"
+     {% if twitter_username %} data-via="{{ twitter_username }}" {% endif %}
+     data-size="large">
+    Tweet
+  </a>
+  {% if twitter_username %}
+    <a class="twitter-follow-button" href="https://twitter.com/{{ twitter_username }}"
+       data-show-count="false"
+       data-size="large">
+      Follow @{{ twitter_username }}
+    </a>
+  {% endif %}
+</div>

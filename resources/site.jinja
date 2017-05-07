@@ -1,18 +1,59 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title></title>
+    <title>{{ title if title != None else 'Title' }}</title>
+    <link rel="stylesheet" href="presentation.css">
+    <meta charset="utf-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width, height=device-height, initial-scale=1" name="viewport">
   </head>
   <body>
 
-    <ul>
-      {% for s in slides %}
-        <li>
-          <img src="{{ s['image'] }}" />
-          {{ s['note'] | replace('\n', '<br />') }}
-        </li>
-      {% endfor %}
-    </ul>
+    <header>
+      <h1>{{ title if title != None else 'Title' }}</h1>
+      <p>
+        Edit this to add an abstract.
+      </p>
 
+      {% include "share.jinja" %}
+    </header>
+
+    <div class="presentation">
+      <table class="slides">
+        {% for s in slides %}
+          <tr>
+            <td class="slide">
+              <img src="{{ s['image'] }}" />
+            </td>
+            <td class="note">
+              {{ s['note'] | replace('\n', '<br />') }}
+            </td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    <footer>
+      {% include "share.jinja" %}
+    </footer>
+
+    <script>
+     window.twttr = (function(d, s, id) {
+       var js, fjs = d.getElementsByTagName(s)[0],
+           t = window.twttr || {};
+       if (d.getElementById(id)) return t;
+       js = d.createElement(s);
+       js.id = id;
+       js.src = "https://platform.twitter.com/widgets.js";
+       fjs.parentNode.insertBefore(js, fjs);
+
+       t._e = [];
+       t.ready = function(f) {
+         t._e.push(f);
+       };
+
+       return t;
+     }(document, "script", "twitter-wjs"));
+    </script>
   </body>
 </html>
