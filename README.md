@@ -10,15 +10,19 @@ This script addresses both of these issues.
 * It generates a nicely-formatted PDF [like this one](https://speakerdeck.com/mcfunley/deploying-often-is-a-very-good-idea), suitable for uploading to Speakerdeck or others.
 * It generates an html presentation in a minimalist, reader-friendly format inspired by [Maciej Cegłowski](http://idlewords.com/talks/).
 
-### Screenshots
+### Examples and Screenshots
 
-You get PDF presentation slides that look like this:
+[Here is an example of the HTML site generated](http://pushtrain.club).
+
+You also get PDF presentation slides that look like this:
 
 ![A nice looking slide](/img/nice-slide.png?raw=true)
 
 Instead of the crappy ones that Keynote gives you:
 
 ![A horrible looking slide](/img/bad-slide.png?raw=true)
+
+A full PDF sample can be found [here](https://speakerdeck.com/mcfunley/the-push-train).
 
 ### Setup
 
