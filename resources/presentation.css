@@ -59,6 +59,10 @@ body {
   background-color: #eee;
 }
 
+body p {
+  line-height: 1.2rem;
+}
+
 header {
   border-bottom: 1px solid #ccc;
 }
@@ -67,8 +71,11 @@ header, .presentation, footer {
   padding: 40px;
 }
 @media(max-width: 700px) {
-  header, .presentation, footer {
-    padding: 20px 40px;
+  header, footer {
+    padding: 20px 20px;
+  }
+  .presentation {
+    padding: 0;
   }
 }
 
