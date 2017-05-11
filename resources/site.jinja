@@ -26,7 +26,9 @@
               <img src="{{ s['image'] }}" />
             </td>
             <td class="note">
+              <a name="{{ loop.index }}"></a>
               {{ s['note'] | replace('\n', '<br />') }}
+              <a href="#{{ loop.index }}">#</a>
             </td>
           </tr>
         {% endfor %}
