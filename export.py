@@ -43,7 +43,7 @@ class Options(object):
 
 
 def slides_and_notes(opts, notes):
-    return zip(glob('%s/*jpeg' % opts.slidesdir), notes)
+    return zip(sorted(glob('%s/*jpeg' % opts.slidesdir)), notes)
 
 
 def make_dirs(opts):
