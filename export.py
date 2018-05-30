@@ -22,7 +22,7 @@ pdfmetrics.registerFont(sf)
 
 
 class Options(object):
-    def __init__(self, outdir, pagesize, font_size, title, twitter_username):
+    def __init__(self, outdir, pagesize, font_size, title, twitter_username, skip_builds):
         self.outdir = os.path.abspath(outdir)
         self.pagesize = pagesize
         self.font_size = font_size
@@ -31,6 +31,7 @@ class Options(object):
         self.font = 'SanFrancisco'
         self.title = title
         self.twitter_username = twitter_username
+        self.skip_builds = skip_builds
 
     @property
     def slidesdir(self):
@@ -106,7 +107,7 @@ def export_keynote(filename, opts):
             k.export_style: k.IndividualSlides,
             k.compression_factor: 0.9,
             k.image_format: k.JPEG,
-            k.all_stages: True,
+            k.all_stages: not opts.skip_builds,
             k.skipped_slides: False
         })
 
@@ -147,11 +148,13 @@ def main():
     ap.add_argument('-t', '--title', help='Title of the presentation')
     ap.add_argument('-u', '--twitter-username', help='Twitter for author',
                     dest='twitter_username')
+    ap.add_argument('-sb', '--skip-builds', help='Skip build stages and just output one JPG per slide',
+                    action='store_true', dest='skip_builds')
 
     args = ap.parse_args()
     pagesize = tuple([int(s) for s in args.pagesize.split('x')])
     opts = Options(args.outdir, pagesize, args.font_size, args.title,
-                   args.twitter_username)
+                   args.twitter_username, args.skip_builds)
 
     print('Processing', args.keynote)
     make_dirs(opts)
