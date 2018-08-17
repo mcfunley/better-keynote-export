@@ -3,6 +3,7 @@ import appscript
 from argparse import ArgumentParser
 from contextlib import closing
 from glob import glob
+import itertools
 from jinja2 import Environment, FileSystemLoader
 import math
 import os
@@ -101,6 +102,8 @@ def export_keynote(filename, opts):
 
     with closing(keynote.open(keynote_file)) as doc:
         notes = doc.slides.presenter_notes()
+        skipped = doc.slides.skipped()
+        notes = list(itertools.compress(notes, [not s for s in skipped]))
 
         doc.export(as_=k.slide_images, to=outpath, with_properties = {
             k.export_style: k.IndividualSlides,
