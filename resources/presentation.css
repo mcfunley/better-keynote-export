@@ -140,3 +140,24 @@ footer p {
   text-align: center;
   font-size: 0.8rem;
 }
+
+
+.bsky {
+  display: inline-flex;
+  align-items: center;
+}
+.bsky .handle {
+  margin-left: 10px;
+}
+.share a, .share a:visited {
+  color: #333;
+  font-weight: 500;
+  text-decoration: none;
+}
+.share a:hover {
+  text-decoration: none;
+  color: #555;
+}
+.share {
+  text-align: center;
+}

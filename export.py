@@ -23,7 +23,7 @@ pdfmetrics.registerFont(sf)
 
 class Options(object):
     def __init__(
-        self, outdir, pagesize, font_size, title, twitter_username, skip_builds
+        self, outdir, pagesize, font_size, title, bsky_handle, skip_builds
     ):
         self.outdir = os.path.abspath(outdir)
         self.pagesize = pagesize
@@ -32,7 +32,7 @@ class Options(object):
         self.notepadding = 10
         self.font = "SanFrancisco"
         self.title = title
-        self.twitter_username = twitter_username
+        self.bsky_handle = bsky_handle
         self.skip_builds = skip_builds
 
     @property
@@ -140,7 +140,7 @@ def generate_html(opts, notes):
             for s, n in slides_and_notes(opts, notes)
         ],
         title=opts.title,
-        twitter_username=opts.twitter_username,
+        bsky_handle=opts.bsky_handle,
     )
 
     outfile = os.path.join(opts.outdir, "index.html")
@@ -174,9 +174,9 @@ def main():
     ap.add_argument("-t", "--title", help="Title of the presentation")
     ap.add_argument(
         "-u",
-        "--twitter-username",
-        help="Twitter for author",
-        dest="twitter_username",
+        "--bluesky-handle",
+        help="BlueSky handle for author",
+        dest="bsky_handle",
     )
     ap.add_argument(
         "-sb",
@@ -193,7 +193,7 @@ def main():
         pagesize,
         args.font_size,
         args.title,
-        args.twitter_username,
+        args.bsky_handle,
         args.skip_builds,
     )
 
