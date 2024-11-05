@@ -17,7 +17,9 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 from reportlab.platypus import Paragraph
 
-sf = TTFont("SanFrancisco", "resources/SanFrancisco-Regular.ttf")
+RESOURCES = os.path.join(os.path.dirname(__file__), "resources")
+
+sf = TTFont("SanFrancisco", f"{RESOURCES}/SanFrancisco-Regular.ttf")
 pdfmetrics.registerFont(sf)
 
 
@@ -131,7 +133,7 @@ def generate_html(opts, notes):
     def imgpath(s):
         return s.replace(opts.outdir + "/", "")
 
-    e = Environment(loader=FileSystemLoader("resources"))
+    e = Environment(loader=FileSystemLoader(RESOURCES))
     t = e.get_template("site.jinja")
 
     s = t.render(
@@ -147,7 +149,7 @@ def generate_html(opts, notes):
     open(outfile, "w").write(s)
 
     shutil.copyfile(
-        "resources/presentation.css",
+        f"{RESOURCES}/presentation.css",
         os.path.join(opts.outdir, "presentation.css"),
     )
 
