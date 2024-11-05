@@ -2,11 +2,12 @@
 import itertools
 import os
 import shutil
-from argparse import ArgumentParser
 from contextlib import closing
 from glob import glob
+from typing import Optional
 
 import appscript
+import click
 from jinja2 import Environment, FileSystemLoader
 from reportlab.lib.colors import HexColor
 from reportlab.lib.enums import TA_LEFT
@@ -154,54 +155,68 @@ def generate_html(opts, notes):
     )
 
 
-def main():
-    ap = ArgumentParser()
-    ap.add_argument(
-        "-k", "--keynote", help="Path to the keynote to convert", required=True
-    )
-    ap.add_argument(
-        "-o", "--outdir", help="Where to put the output.", required=True
-    )
-    ap.add_argument(
-        "-p", "--pagesize", help="The size of the pages.", default="1920x1080"
-    )
-    ap.add_argument(
-        "-f",
-        "--font-size",
-        help="Font size for notes",
-        type=int,
-        dest="font_size",
-        default=36,
-    )
-    ap.add_argument("-t", "--title", help="Title of the presentation")
-    ap.add_argument(
-        "-u",
-        "--bluesky-handle",
-        help="BlueSky handle for author",
-        dest="bsky_handle",
-    )
-    ap.add_argument(
-        "-sb",
-        "--skip-builds",
-        help="Skip build stages and just output one JPG per slide",
-        action="store_true",
-        dest="skip_builds",
-    )
-
-    args = ap.parse_args()
-    pagesize = tuple([int(s) for s in args.pagesize.split("x")])
+@click.command()
+@click.option(
+    "-k",
+    "--keynote",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False),
+    help="Path to the keynote to convert",
+    required=True,
+)
+@click.option(
+    "-o",
+    "--outdir",
+    type=click.Path(file_okay=False, dir_okay=True),
+    help="Where to put the output.",
+    required=True,
+)
+@click.option(
+    "-p",
+    "--pagesize",
+    default="1920x1080",
+    help="The size of the pages.",
+    type=click.STRING,
+)
+@click.option(
+    "-f",
+    "--font-size",
+    type=click.INT,
+    help="Font size for notes",
+    default=36,
+)
+@click.option("-t", "--title", help="Title of the presentation", required=True)
+@click.option(
+    "-u",
+    "--bluesky-handle",
+    help="BlueSky handle for author",
+    required=False,
+    type=click.STRING,
+)
+@click.option(
+    "--skip-builds", is_flag=True, help="Skip build stages", default=False
+)
+def main(
+    keynote: str,
+    outdir: str,
+    pagesize: str,
+    font_size: int,
+    title: str,
+    bluesky_handle: Optional[str],
+    skip_builds: bool,
+):
+    pagesize = tuple([int(s) for s in pagesize.split("x")])
     opts = Options(
-        args.outdir,
+        outdir,
         pagesize,
-        args.font_size,
-        args.title,
-        args.bsky_handle,
-        args.skip_builds,
+        font_size,
+        title,
+        bluesky_handle,
+        skip_builds,
     )
 
-    print("Processing", args.keynote)
+    print("Processing", keynote)
     make_dirs(opts)
-    notes = export_keynote(args.keynote, opts)
+    notes = export_keynote(keynote, opts)
     generate_pdf(opts, notes)
     generate_html(opts, notes)
 
