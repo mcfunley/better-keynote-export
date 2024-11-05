@@ -26,13 +26,7 @@ A full PDF sample can be found [here](https://speakerdeck.com/mcfunley/the-push-
 
 ### Setup
 
-[pyenv virtualenv](https://github.com/pyenv/pyenv-virtualenv) is a reasonable way to have isolated python environments. Follow their instructions for setting that up and then do this:
 
-```
-$ pyenv virtualenv 3.6.1 better-keynote-export
-$ pyenv activate better-keynote-export
-$ pip install -r requirements.txt
-```
 
 ### Usage
 
@@ -43,7 +37,7 @@ Use `./export.py --help` to see all of the available options. Basically,
   --keynote=<the keynote file> \
   --outdir=<a path> \
   --title=<the name of the presentation> \
-  --twitter-username=<your twitter username>
+  --bluesky-handle=<your BlueSky username>
 ```
 
 The output path gets both a PDF file and a self-contained website that you can easily host with (for example) [GitHub pages](https://pages.github.com/).
