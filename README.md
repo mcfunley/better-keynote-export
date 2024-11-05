@@ -1,4 +1,4 @@
-## better-keynote-export
+# keynote-export
 
 This is a script that can export Keynote presentations in formats that are better for sharing them as standalone documents. Natively,
 
@@ -10,7 +10,12 @@ This script addresses both of these issues.
 * It generates a nicely-formatted PDF [like this one](https://speakerdeck.com/mcfunley/deploying-often-is-a-very-good-idea), suitable for uploading to Speakerdeck or others.
 * It generates an html presentation in a minimalist, reader-friendly format inspired by [Maciej Cegłowski](http://idlewords.com/talks/).
 
-### Examples and Screenshots
+## Setup
+You can install this program using [pipx](https://github.com/pypa/pipx):
+
+    pipx install keynote-export
+
+## Examples and Screenshots
 
 [Here is an example of the HTML site generated](http://pushtrain.club).
 
@@ -24,16 +29,12 @@ Instead of the crappy ones that Keynote gives you:
 
 A full PDF sample can be found [here](https://speakerdeck.com/mcfunley/the-push-train).
 
-### Setup
+## Usage
 
-
-
-### Usage
-
-Use `./export.py --help` to see all of the available options. Basically,
+Use `keynote-export --help` to see all of the available options. Basically,
 
 ```
-./export.py \
+keynote-export \
   --keynote=<the keynote file> \
   --outdir=<a path> \
   --title=<the name of the presentation> \
@@ -42,7 +43,7 @@ Use `./export.py --help` to see all of the available options. Basically,
 
 The output path gets both a PDF file and a self-contained website that you can easily host with (for example) [GitHub pages](https://pages.github.com/).
 
-### Notes
+## Notes
 
 You must have Keynote installed to use this.
 
