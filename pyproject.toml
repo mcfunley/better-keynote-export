@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "keynote_export"
-version = "0.1.1"
+version = "0.1.2"
 description = ""
 authors = ["Dan McKinley <mcfunley@gmail.com>"]
 repository = "https://github.com/mcfunley/better-keynote-export"
@@ -8,6 +8,9 @@ readme = "README.md"
 
 [tool.poetry.scripts]
 keynote-export = "keynote_export:main"
+
+[tool.setuptools]
+include-package-data = true
 
 [tool.poetry.dependencies]
 python = "^3.12"
