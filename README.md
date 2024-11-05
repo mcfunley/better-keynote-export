@@ -1,14 +1,16 @@
 # keynote-export
 
-This is a script that can export Keynote presentations in formats that are better for sharing them as standalone documents. Natively,
+This is a program that can export Keynote presentations in formats that are better for sharing them.
+
+* It generates an html presentation in a [minimalist, reader-friendly format](https://boringtechnology.club).
+* It generates a nicely-formatted PDF [like this one](https://speakerdeck.com/mcfunley/deploying-often-is-a-very-good-idea), suitable for uploading to Speakerdeck or others.
+
+Natively,
 
 * Keynote will export slides with presenter notes as a PDF. But the resulting formatting is terrible, giving 50% of each page of the PDF up to the notes.
 * Keynote will export an HTML document, but it won't include presenter notes with it.
 
-This script addresses both of these issues.
-
-* It generates a nicely-formatted PDF [like this one](https://speakerdeck.com/mcfunley/deploying-often-is-a-very-good-idea), suitable for uploading to Speakerdeck or others.
-* It generates an html presentation in a minimalist, reader-friendly format inspired by [Maciej Cegłowski](http://idlewords.com/talks/).
+This program addresses both of these issues.
 
 ## Setup
 You can install this program using [pipx](https://github.com/pypa/pipx):
