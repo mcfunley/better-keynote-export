@@ -146,7 +146,14 @@ footer p {
   display: inline-flex;
   align-items: center;
 }
+.mstdn {
+  display: inline-flex;
+  align-items: center;
+}
 .bsky .handle {
+  margin-left: 10px;
+}
+.mstdn .handle {
   margin-left: 10px;
 }
 .share a, .share a:visited {
