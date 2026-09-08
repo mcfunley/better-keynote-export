@@ -40,7 +40,8 @@ keynote-export \
   --keynote=<the keynote file> \
   --outdir=<a path> \
   --title=<the name of the presentation> \
-  --bluesky-handle=<your BlueSky username>
+  --bluesky-handle=<your BlueSky username> \
+  --mastodon-handle=<your Mastodon username>
 ```
 
 The output path gets both a PDF file and a self-contained website that you can easily host with (for example) [GitHub pages](https://pages.github.com/).

@@ -26,7 +26,7 @@ pdfmetrics.registerFont(sf)
 
 class Options(object):
     def __init__(
-        self, outdir, pagesize, font_size, title, bsky_handle, skip_builds
+        self, outdir, pagesize, font_size, title, bsky_handle, mastodon_handle, skip_builds
     ):
         self.outdir = os.path.abspath(outdir)
         self.pagesize = pagesize
@@ -36,6 +36,7 @@ class Options(object):
         self.font = "SanFrancisco"
         self.title = title
         self.bsky_handle = bsky_handle
+        self.mastodon_handle = mastodon_handle
         self.skip_builds = skip_builds
 
     @property
@@ -129,7 +130,6 @@ def export_keynote(filename, opts):
 
     return notes
 
-
 def generate_html(opts, notes):
     def imgpath(s):
         return s.replace(opts.outdir + "/", "")
@@ -144,6 +144,7 @@ def generate_html(opts, notes):
         ],
         title=opts.title,
         bsky_handle=opts.bsky_handle,
+        mastodon_handle=opts.mastodon_handle,
     )
 
     outfile = os.path.join(opts.outdir, "index.html")
@@ -153,7 +154,6 @@ def generate_html(opts, notes):
         f"{RESOURCES}/presentation.css",
         os.path.join(opts.outdir, "presentation.css"),
     )
-
 
 @click.command()
 @click.option(
@@ -193,6 +193,13 @@ def generate_html(opts, notes):
     type=click.STRING,
 )
 @click.option(
+    "-m",
+    "--mastodon-handle",
+    help="Mastodon handle for author",
+    required=False,
+    type=click.STRING,
+)
+@click.option(
     "--skip-builds", is_flag=True, help="Skip build stages", default=False
 )
 def main(
@@ -202,6 +209,7 @@ def main(
     font_size: int,
     title: str,
     bluesky_handle: Optional[str],
+    mastodon_handle: Optional[str],
     skip_builds: bool,
 ):
     pagesize = tuple([int(s) for s in pagesize.split("x")])
@@ -211,6 +219,7 @@ def main(
         font_size,
         title,
         bluesky_handle,
+        mastodon_handle,
         skip_builds,
     )
 

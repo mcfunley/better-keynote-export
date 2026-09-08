@@ -17,5 +17,6 @@ keynote-export \
   --keynote=<the keynote file> \
   --outdir=<a path> \
   --title=<the name of the presentation> \
-  --bluesky-handle=<your BlueSky username>
+  --bluesky-handle=<your BlueSky username> \
+  --mastdoon-handle=<your Mastodon username>
 ```
