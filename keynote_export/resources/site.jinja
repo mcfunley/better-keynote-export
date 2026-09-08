@@ -23,7 +23,14 @@
         {% for s in slides %}
           <tr>
             <td class="slide">
-              <img src="{{ s['image'] }}" />
+              <img src="{{ s['src'] }}"
+                   srcset="{{ s['srcset'] }}"
+                   sizes="{{ sizes }}"
+                   width="{{ s['width'] }}"
+                   height="{{ s['height'] }}"
+                   loading="{{ 'eager' if loop.first else 'lazy' }}"
+                   decoding="async"
+                   alt="Slide {{ loop.index }}" />
             </td>
             <td class="note">
               <a name="{{ loop.index }}"></a>

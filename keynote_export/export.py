@@ -9,6 +9,7 @@ from typing import Optional
 import appscript
 import click
 from jinja2 import Environment, FileSystemLoader
+from PIL import Image
 from reportlab.lib.colors import HexColor
 from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.styles import ParagraphStyle
@@ -19,6 +20,13 @@ from reportlab.pdfgen import canvas
 from reportlab.platypus import Paragraph
 
 RESOURCES = os.path.join(os.path.dirname(__file__), "resources")
+
+SRCSET_WIDTHS = (480, 960, 1440, 1920)
+WEBP_QUALITY = 80
+
+# Slides sit two-to-a-row until the 700px breakpoint in presentation.css, below
+# which they stack. The subtractions are the surrounding padding.
+SLIDE_SIZES = "(max-width: 700px) calc(100vw - 20px), calc(50vw - 60px)"
 
 sf = TTFont("SanFrancisco", f"{RESOURCES}/SanFrancisco-Regular.ttf")
 pdfmetrics.registerFont(sf)
@@ -51,6 +59,50 @@ class Options(object):
 
 def slides_and_notes(opts, notes):
     return zip(sorted(glob("%s/*jpeg" % opts.slidesdir)), notes)
+
+
+def variant_widths(native_width):
+    """The widths to render a slide at, narrowest first. Never upscales."""
+    return [w for w in SRCSET_WIDTHS if w < native_width] + [native_width]
+
+
+def srcset(variants):
+    return ", ".join("%s %dw" % (path, w) for path, w in variants)
+
+
+def generate_images(opts, notes):
+    """Render each exported slide to webp at the srcset widths.
+
+    Keynote only exports jpeg, and the PDF is drawn from those, so this has to
+    run after generate_pdf. The originals are deleted once the webps exist,
+    since only the webps are published.
+    """
+    slides = []
+
+    for jpeg, note in slides_and_notes(opts, notes):
+        with Image.open(jpeg) as img:
+            width, height = img.size
+            stem = os.path.splitext(jpeg)[0]
+
+            variants = []
+            for w in variant_widths(width):
+                path = "%s-%d.webp" % (stem, w)
+                rendition = (
+                    img
+                    if w == width
+                    else img.resize(
+                        (w, round(height * w / width)), Image.LANCZOS
+                    )
+                )
+                rendition.save(path, "WEBP", quality=WEBP_QUALITY, method=6)
+                variants.append((path, w))
+
+        os.remove(jpeg)
+        slides.append(
+            {"variants": variants, "width": width, "height": height, "note": note}
+        )
+
+    return slides
 
 
 def make_dirs(opts):
@@ -130,18 +182,26 @@ def export_keynote(filename, opts):
 
     return notes
 
-def generate_html(opts, notes):
+def generate_html(opts, slides):
     def imgpath(s):
         return s.replace(opts.outdir + "/", "")
+
+    def rendered(slide):
+        variants = [(imgpath(p), w) for p, w in slide["variants"]]
+        return {
+            "src": variants[-1][0],
+            "srcset": srcset(variants),
+            "width": slide["width"],
+            "height": slide["height"],
+            "note": slide["note"],
+        }
 
     e = Environment(loader=FileSystemLoader(RESOURCES))
     t = e.get_template("site.jinja")
 
     s = t.render(
-        slides=[
-            {"image": imgpath(s), "note": n}
-            for s, n in slides_and_notes(opts, notes)
-        ],
+        slides=[rendered(s) for s in slides],
+        sizes=SLIDE_SIZES,
         title=opts.title,
         bsky_handle=opts.bsky_handle,
         mastodon_handle=opts.mastodon_handle,
@@ -227,7 +287,7 @@ def main(
     make_dirs(opts)
     notes = export_keynote(keynote, opts)
     generate_pdf(opts, notes)
-    generate_html(opts, notes)
+    generate_html(opts, generate_images(opts, notes))
 
 
 if __name__ == "__main__":

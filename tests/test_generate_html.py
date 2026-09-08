@@ -3,7 +3,19 @@ import os
 from keynote_export.export import Options, generate_html
 
 
-def render(tmp_path, bsky_handle=None, mastodon_handle=None):
+def slide(outdir, n, note="a note", width=1920, height=1080):
+    return {
+        "variants": [
+            (os.path.join(outdir, "slides", "slides.%03d-%d.webp" % (n, w)), w)
+            for w in (480, 960, 1440, width)
+        ],
+        "width": width,
+        "height": height,
+        "note": note,
+    }
+
+
+def render(tmp_path, bsky_handle=None, mastodon_handle=None, slides=()):
     opts = Options(
         outdir=str(tmp_path),
         pagesize=(1920, 1080),
@@ -13,7 +25,7 @@ def render(tmp_path, bsky_handle=None, mastodon_handle=None):
         mastodon_handle=mastodon_handle,
         skip_builds=False,
     )
-    generate_html(opts, [])
+    generate_html(opts, list(slides))
     return open(os.path.join(opts.outdir, "index.html")).read()
 
 
@@ -41,3 +53,55 @@ def test_both_handles(tmp_path):
     html = render(tmp_path, bsky_handle="mcfunley.com", mastodon_handle="mcfunley")
     assert "https://bsky.app/profile/mcfunley.com" in html
     assert "https://mastodon.social/@mcfunley" in html
+
+
+def test_slide_paths_are_relative_to_the_outdir(tmp_path):
+    html = render(tmp_path, slides=[slide(str(tmp_path), 1)])
+    assert str(tmp_path) not in html
+    assert 'src="slides/slides.001-1920.webp"' in html
+
+
+def test_srcset_lists_every_variant(tmp_path):
+    html = render(tmp_path, slides=[slide(str(tmp_path), 1)])
+    assert (
+        'srcset="slides/slides.001-480.webp 480w, '
+        "slides/slides.001-960.webp 960w, "
+        "slides/slides.001-1440.webp 1440w, "
+        'slides/slides.001-1920.webp 1920w"'
+    ) in html
+
+
+def test_src_falls_back_to_the_widest_variant(tmp_path):
+    html = render(tmp_path, slides=[slide(str(tmp_path), 1, width=800)])
+    assert 'src="slides/slides.001-800.webp"' in html
+
+
+def test_sizes_matches_the_stylesheet_breakpoint(tmp_path):
+    html = render(tmp_path, slides=[slide(str(tmp_path), 1)])
+    assert 'sizes="(max-width: 700px) calc(100vw - 20px), calc(50vw - 60px)"' in html
+
+
+def test_intrinsic_dimensions_are_emitted(tmp_path):
+    html = render(tmp_path, slides=[slide(str(tmp_path), 1)])
+    assert 'width="1920"' in html
+    assert 'height="1080"' in html
+
+
+def test_only_the_first_slide_loads_eagerly(tmp_path):
+    html = render(
+        tmp_path, slides=[slide(str(tmp_path), n) for n in range(1, 4)]
+    )
+    assert html.count('loading="eager"') == 1
+    assert html.count('loading="lazy"') == 2
+
+
+def test_notes_are_rendered_with_line_breaks(tmp_path):
+    html = render(tmp_path, slides=[slide(str(tmp_path), 1, note="one\ntwo")])
+    assert "one<br />two" in html
+
+
+def test_no_jpegs_are_referenced(tmp_path):
+    html = render(
+        tmp_path, slides=[slide(str(tmp_path), n) for n in range(1, 4)]
+    )
+    assert ".jpeg" not in html

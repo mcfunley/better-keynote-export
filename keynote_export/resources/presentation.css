@@ -108,6 +108,11 @@ header p {
   }
 }
 
+/* Fixed so the widths the srcset `sizes` attribute assumes actually hold. */
+table.slides {
+  width: 100%;
+}
+
 table.slides tr {
   margin-bottom: 20px;
 }
@@ -131,6 +136,9 @@ table.slides td {
 
 table.slides img {
   max-width: 100%;
+  /* The width/height attributes reserve space while the slide loads. Without
+     this they'd also fix the rendered height and squash the image. */
+  height: auto;
 }
 
 footer {
