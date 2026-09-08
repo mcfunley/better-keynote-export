@@ -2,3 +2,7 @@
 out
 slides
 dist
+__pycache__
+.pytest_cache
+.venv
+__pycache__
