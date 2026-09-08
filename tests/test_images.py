@@ -6,6 +6,7 @@ from PIL import Image
 from keynote_export.export import (
     Options,
     generate_images,
+    paragraphs,
     srcset,
     variant_widths,
 )
@@ -48,6 +49,27 @@ def test_variant_widths_no_duplicate_at_boundary():
 
 def test_variant_widths_narrower_than_smallest():
     assert variant_widths(320) == [320]
+
+
+def test_paragraphs_splits_on_newlines():
+    assert paragraphs("one\ntwo\nthree") == ["one", "two", "three"]
+
+
+def test_paragraphs_treats_a_run_of_newlines_as_one_break():
+    assert paragraphs("one\n\ntwo\n\n\n\nthree") == ["one", "two", "three"]
+
+
+def test_paragraphs_strips_surrounding_whitespace():
+    assert paragraphs("  one  \n\t two \n") == ["one", "two"]
+
+
+def test_paragraphs_of_an_empty_note():
+    assert paragraphs("") == []
+    assert paragraphs("\n\n  \n") == []
+
+
+def test_paragraphs_keeps_internal_spacing():
+    assert paragraphs("one  two") == ["one  two"]
 
 
 def test_srcset_formats_width_descriptors():

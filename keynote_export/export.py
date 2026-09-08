@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import itertools
 import os
+import re
 import shutil
 from contextlib import closing
 from glob import glob
@@ -24,9 +25,15 @@ RESOURCES = os.path.join(os.path.dirname(__file__), "resources")
 SRCSET_WIDTHS = (480, 960, 1440, 1920)
 WEBP_QUALITY = 80
 
-# Slides sit two-to-a-row until the 700px breakpoint in presentation.css, below
-# which they stack. The subtractions are the surrounding padding.
-SLIDE_SIZES = "(max-width: 700px) calc(100vw - 20px), calc(50vw - 60px)"
+# Tracks the slide column in presentation.css: a number gutter, the slide, and
+# the note, inside a 1240px page. The subtractions are the page padding and the
+# gutter; 0.592 is the slide's share of what's left. Below 820px slides stack
+# and take the full width.
+SLIDE_SIZES = (
+    "(max-width: 820px) calc(100vw - 40px), "
+    "(max-width: 1320px) calc((100vw - 168px) * 0.592), "
+    "682px"
+)
 
 sf = TTFont("SanFrancisco", f"{RESOURCES}/SanFrancisco-Regular.ttf")
 pdfmetrics.registerFont(sf)
@@ -68,6 +75,15 @@ def variant_widths(native_width):
 
 def srcset(variants):
     return ", ".join("%s %dw" % (path, w) for path, w in variants)
+
+
+def paragraphs(note):
+    """Split a presenter note into paragraphs, one per line.
+
+    Notes get typed with stray blank lines between them, so any run of newlines
+    separates rather than accumulating into empty paragraphs.
+    """
+    return [p.strip() for p in re.split(r"\n+", note) if p.strip()]
 
 
 def generate_images(opts, notes):
@@ -193,7 +209,7 @@ def generate_html(opts, slides):
             "srcset": srcset(variants),
             "width": slide["width"],
             "height": slide["height"],
-            "note": slide["note"],
+            "paragraphs": paragraphs(slide["note"]),
         }
 
     e = Environment(loader=FileSystemLoader(RESOURCES))

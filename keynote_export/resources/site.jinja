@@ -19,10 +19,11 @@
     </header>
 
     <div class="presentation">
-      <table class="slides">
+      <ol class="slides">
         {% for s in slides %}
-          <tr>
-            <td class="slide">
+          <li class="slide" id="{{ loop.index }}">
+            <a class="slide-index" href="#{{ loop.index }}">{{ loop.index }}</a>
+            <div class="slide-image">
               <img src="{{ s['src'] }}"
                    srcset="{{ s['srcset'] }}"
                    sizes="{{ sizes }}"
@@ -31,15 +32,13 @@
                    loading="{{ 'eager' if loop.first else 'lazy' }}"
                    decoding="async"
                    alt="Slide {{ loop.index }}" />
-            </td>
-            <td class="note">
-              <a name="{{ loop.index }}"></a>
-              {{ s['note'] | replace('\n', '<br />') }}
-              <a href="#{{ loop.index }}">#</a>
-            </td>
-          </tr>
+            </div>
+            <div class="slide-note">
+              {% for p in s['paragraphs'] %}<p>{{ p }}</p>{% endfor %}
+            </div>
+          </li>
         {% endfor %}
-      </table>
+      </ol>
     </div>
 
     <footer>

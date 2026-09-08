@@ -78,7 +78,21 @@ def test_src_falls_back_to_the_widest_variant(tmp_path):
 
 def test_sizes_matches_the_stylesheet_breakpoint(tmp_path):
     html = render(tmp_path, slides=[slide(str(tmp_path), 1)])
-    assert 'sizes="(max-width: 700px) calc(100vw - 20px), calc(50vw - 60px)"' in html
+    assert (
+        'sizes="(max-width: 820px) calc(100vw - 40px), '
+        "(max-width: 1320px) calc((100vw - 168px) * 0.592), "
+        '682px"'
+    ) in html
+
+
+def test_slides_keep_their_numeric_anchors(tmp_path):
+    """Deep links to published talks point at #1, #2, ... so the ids are load-bearing."""
+    html = render(
+        tmp_path, slides=[slide(str(tmp_path), n) for n in range(1, 4)]
+    )
+    for n in (1, 2, 3):
+        assert 'id="%d"' % n in html
+        assert 'href="#%d"' % n in html
 
 
 def test_intrinsic_dimensions_are_emitted(tmp_path):
@@ -95,9 +109,23 @@ def test_only_the_first_slide_loads_eagerly(tmp_path):
     assert html.count('loading="lazy"') == 2
 
 
-def test_notes_are_rendered_with_line_breaks(tmp_path):
+def test_note_lines_become_paragraphs(tmp_path):
     html = render(tmp_path, slides=[slide(str(tmp_path), 1, note="one\ntwo")])
-    assert "one<br />two" in html
+    assert "<p>one</p><p>two</p>" in html
+    assert "<br />" not in html
+
+
+def test_blank_lines_do_not_make_empty_paragraphs(tmp_path):
+    html = render(
+        tmp_path, slides=[slide(str(tmp_path), 1, note="one\n\n\ntwo")]
+    )
+    assert "<p>one</p><p>two</p>" in html
+    assert "<p></p>" not in html
+
+
+def test_a_note_with_no_text_renders_no_paragraphs(tmp_path):
+    html = render(tmp_path, slides=[slide(str(tmp_path), 1, note="")])
+    assert "<p>" not in html.split('class="slide-note"')[1].split("</div>")[0]
 
 
 def test_no_jpegs_are_referenced(tmp_path):
