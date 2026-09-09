@@ -27,13 +27,13 @@ SRCSET_WIDTHS = (480, 960, 1440, 1920)
 WEBP_QUALITY = 80
 
 # Tracks the slide column in presentation.css: a number gutter, the slide, and
-# the note, inside a 1240px page. The subtractions are the page padding and the
-# gutter; 0.592 is the slide's share of what's left. Below 820px slides stack
-# and take the full width.
+# the note, inside a page that grows to 1840px. The subtractions are the page
+# padding and the gutter; 0.592 is the slide's share of what's left. Below 820px
+# slides stack and take the full width; past 1920px the page stops growing.
 SLIDE_SIZES = (
     "(max-width: 820px) calc(100vw - 40px), "
-    "(max-width: 1320px) calc((100vw - 168px) * 0.592), "
-    "682px"
+    "(max-width: 1920px) calc((100vw - 168px) * 0.592), "
+    "1037px"
 )
 
 sf = TTFont("SanFrancisco", f"{RESOURCES}/SanFrancisco-Regular.ttf")

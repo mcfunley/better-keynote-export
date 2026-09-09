@@ -80,8 +80,8 @@ def test_sizes_matches_the_stylesheet_breakpoint(tmp_path):
     html = render(tmp_path, slides=[slide(str(tmp_path), 1)])
     assert (
         'sizes="(max-width: 820px) calc(100vw - 40px), '
-        "(max-width: 1320px) calc((100vw - 168px) * 0.592), "
-        '682px"'
+        "(max-width: 1920px) calc((100vw - 168px) * 0.592), "
+        '1037px"'
     ) in html
 
 

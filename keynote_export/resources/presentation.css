@@ -63,7 +63,9 @@ table {
   --sans: "Avenir Next", Avenir, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
-  --page: 1240px;
+  /* Containers are max-width'd and centred, so this is a ceiling rather than a
+     width: the layout stays fluid until the viewport reaches it. */
+  --page: 1840px;
   --measure: 34rem;
   --gutter: 2.5rem;
   --column-gap: 1.5rem;
@@ -93,6 +95,19 @@ body {
   line-height: 1.55;
 }
 
+/* Large displays. The slide column grows with the page, but note text stays at
+   the reading measure, so the extra width goes to the slides. Has to sit after
+   the base body rule above, which would otherwise win on source order. */
+@media (min-width: 1600px) {
+  :root {
+    --measure: 36rem;
+  }
+
+  body {
+    font-size: 1.1875rem;
+  }
+}
+
 a:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
@@ -114,7 +129,7 @@ header {
 }
 
 header h1 {
-  font-size: clamp(2.25rem, 6vw, 3.5rem);
+  font-size: clamp(2.25rem, 6vw, 4rem);
   /* Demi Bold rather than Bold; Avenir Next has both and Bold is heavy here. */
   font-weight: 600;
   line-height: 1.05;
@@ -243,6 +258,8 @@ header .prose {
 
 .slide-note {
   padding-top: 0.15rem;
+  /* The column widens with the page; the text should not. */
+  max-width: var(--measure);
 }
 
 /* On the first paragraph this would push the note off the top of its slide. */
