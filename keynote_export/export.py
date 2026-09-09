@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 import itertools
+import json
 import os
 import re
 import shutil
+import subprocess
+import tempfile
 from contextlib import closing
 from glob import glob
 from typing import Optional
@@ -36,6 +39,17 @@ SLIDE_SIZES = (
     "1037px"
 )
 
+# Favicons. The source svg is rendered once at this size and every derivative
+# is resampled from it, so it should already be cropped how you want it. The
+# background matches --paper in presentation.css: silhouette art on
+# transparency disappears against dark browser chrome, and iOS composites
+# apple-touch-icon onto black.
+FAVICON_MASTER = 1024
+FAVICON_BACKGROUND = "#f4f5f3"
+ICO_SIZES = (16, 32, 48)
+APPLE_TOUCH_SIZE = 180
+MANIFEST_ICON_SIZES = (192, 512)
+
 sf = TTFont("SanFrancisco", f"{RESOURCES}/SanFrancisco-Regular.ttf")
 pdfmetrics.registerFont(sf)
 
@@ -54,6 +68,7 @@ class Options(object):
         footer=None,
         header_link_url=None,
         header_link_text=None,
+        favicon=None,
     ):
         self.outdir = os.path.abspath(outdir)
         self.pagesize = pagesize
@@ -69,6 +84,7 @@ class Options(object):
         self.footer = footer
         self.header_link_url = header_link_url
         self.header_link_text = header_link_text
+        self.favicon = favicon
 
     @property
     def slidesdir(self):
@@ -99,6 +115,101 @@ def render_markdown(path):
         return None
     with open(path, encoding="utf-8") as f:
         return markdown.markdown(f.read(), output_format="html5").strip()
+
+
+def rasterize_svg(svg, out, size):
+    """Render an SVG to a square PNG. False when no rasterizer is available.
+
+    rsvg-convert is the faithful one and keeps the source's transparency.
+    qlmanage ships with macOS, which the exporter already requires, so it
+    stands in when librsvg is missing; it flattens onto white.
+    """
+    if shutil.which("rsvg-convert"):
+        subprocess.run(
+            ["rsvg-convert", "-w", str(size), "-h", str(size), svg, "-o", out],
+            check=True,
+        )
+        return True
+
+    with tempfile.TemporaryDirectory() as d:
+        subprocess.run(
+            ["qlmanage", "-t", "-s", str(size), "-o", d, svg],
+            check=True,
+            capture_output=True,
+        )
+        rendered = glob(os.path.join(d, "*.png"))
+        if not rendered:
+            return False
+        shutil.copyfile(rendered[0], out)
+    return True
+
+
+def favicon_master(svg):
+    """The source art, rasterized once. Every derivative is resampled from it."""
+    with tempfile.TemporaryDirectory() as d:
+        png = os.path.join(d, "master.png")
+        if not rasterize_svg(svg, png, FAVICON_MASTER):
+            return None
+        with Image.open(png) as opened:
+            return opened.convert("RGBA")
+
+
+def favicon_variant(master, size, background=None):
+    """The art at `size`, over an optional background colour."""
+    art = master.resize((size, size), Image.LANCZOS)
+    if not background:
+        return art
+
+    square = Image.new("RGBA", (size, size), background)
+    square.paste(art, (0, 0), art)
+    return square
+
+
+def generate_favicons(opts):
+    """Write the icon set. False when there is nothing to link."""
+    if not opts.favicon:
+        return False
+
+    master = favicon_master(opts.favicon)
+    if master is None:
+        return False
+
+    def out(name):
+        return os.path.join(opts.outdir, name)
+
+    shutil.copyfile(opts.favicon, out("favicon.svg"))
+
+    favicon_variant(master, 256, FAVICON_BACKGROUND).save(
+        out("favicon.ico"), format="ICO", sizes=[(s, s) for s in ICO_SIZES]
+    )
+
+    favicon_variant(master, APPLE_TOUCH_SIZE, FAVICON_BACKGROUND).convert("RGB").save(
+        out("apple-touch-icon.png")
+    )
+
+    icons = []
+    for size in MANIFEST_ICON_SIZES:
+        name = "icon-%d.png" % size
+        favicon_variant(master, size, FAVICON_BACKGROUND).convert("RGB").save(out(name))
+        icons.append(
+            {"src": name, "sizes": "%dx%d" % (size, size), "type": "image/png"}
+        )
+
+    with open(out("site.webmanifest"), "w", encoding="utf-8") as f:
+        json.dump(
+            {
+                "name": opts.title,
+                "short_name": opts.title,
+                "icons": icons,
+                "background_color": FAVICON_BACKGROUND,
+                "theme_color": FAVICON_BACKGROUND,
+                "display": "browser",
+            },
+            f,
+            indent=2,
+        )
+
+    return True
 
 
 def paragraphs(note):
@@ -222,7 +333,7 @@ def export_keynote(filename, opts):
 
     return notes
 
-def generate_html(opts, slides):
+def generate_html(opts, slides, favicon=False):
     def imgpath(s):
         return s.replace(opts.outdir + "/", "")
 
@@ -247,6 +358,7 @@ def generate_html(opts, slides):
         footer=opts.footer,
         header_link_url=opts.header_link_url,
         header_link_text=opts.header_link_text,
+        favicon=favicon,
         bsky_handle=opts.bsky_handle,
         mastodon_handle=opts.mastodon_handle,
     )
@@ -304,6 +416,13 @@ def generate_html(opts, slides):
     required=False,
 )
 @click.option(
+    "-i",
+    "--favicon",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False),
+    help="SVG to derive the favicon set from",
+    required=False,
+)
+@click.option(
     "-l",
     "--header-link",
     help="URL for a small link above the title",
@@ -342,6 +461,7 @@ def main(
     title: str,
     abstract: Optional[str],
     footer: Optional[str],
+    favicon: Optional[str],
     header_link: Optional[str],
     header_link_text: Optional[str],
     bluesky_handle: Optional[str],
@@ -366,13 +486,14 @@ def main(
         footer=render_markdown(footer),
         header_link_url=header_link,
         header_link_text=header_link_text,
+        favicon=favicon,
     )
 
     print("Processing", keynote)
     make_dirs(opts)
     notes = export_keynote(keynote, opts)
     generate_pdf(opts, notes)
-    generate_html(opts, generate_images(opts, notes))
+    generate_html(opts, generate_images(opts, notes), generate_favicons(opts))
 
 
 if __name__ == "__main__":
