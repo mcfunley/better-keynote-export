@@ -52,6 +52,8 @@ class Options(object):
         skip_builds,
         abstract=None,
         footer=None,
+        header_link_url=None,
+        header_link_text=None,
     ):
         self.outdir = os.path.abspath(outdir)
         self.pagesize = pagesize
@@ -65,6 +67,8 @@ class Options(object):
         self.skip_builds = skip_builds
         self.abstract = abstract
         self.footer = footer
+        self.header_link_url = header_link_url
+        self.header_link_text = header_link_text
 
     @property
     def slidesdir(self):
@@ -241,6 +245,8 @@ def generate_html(opts, slides):
         title=opts.title,
         abstract=opts.abstract,
         footer=opts.footer,
+        header_link_url=opts.header_link_url,
+        header_link_text=opts.header_link_text,
         bsky_handle=opts.bsky_handle,
         mastodon_handle=opts.mastodon_handle,
     )
@@ -298,6 +304,20 @@ def generate_html(opts, slides):
     required=False,
 )
 @click.option(
+    "-l",
+    "--header-link",
+    help="URL for a small link above the title",
+    required=False,
+    type=click.STRING,
+)
+@click.option(
+    "-L",
+    "--header-link-text",
+    help="Label for --header-link",
+    required=False,
+    type=click.STRING,
+)
+@click.option(
     "-u",
     "--bluesky-handle",
     help="BlueSky handle for author",
@@ -322,10 +342,17 @@ def main(
     title: str,
     abstract: Optional[str],
     footer: Optional[str],
+    header_link: Optional[str],
+    header_link_text: Optional[str],
     bluesky_handle: Optional[str],
     mastodon_handle: Optional[str],
     skip_builds: bool,
 ):
+    if bool(header_link) != bool(header_link_text):
+        raise click.UsageError(
+            "--header-link and --header-link-text go together; pass both or neither."
+        )
+
     pagesize = tuple([int(s) for s in pagesize.split("x")])
     opts = Options(
         outdir,
@@ -337,6 +364,8 @@ def main(
         skip_builds,
         abstract=render_markdown(abstract),
         footer=render_markdown(footer),
+        header_link_url=header_link,
+        header_link_text=header_link_text,
     )
 
     print("Processing", keynote)

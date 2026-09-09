@@ -66,7 +66,10 @@ table {
   /* Containers are max-width'd and centred, so this is a ceiling rather than a
      width: the layout stays fluid until the viewport reaches it. */
   --page: 1840px;
+  /* The note column, which sits beside a slide and stays at a reading width. */
   --measure: 34rem;
+  /* The title and the markdown regions, which have the page to themselves. */
+  --measure-wide: 64rem;
   --gutter: 2.5rem;
   --column-gap: 1.5rem;
 }
@@ -124,6 +127,40 @@ footer {
 
 /* ---- header ---------------------------------------------------------- */
 
+/* Aligned to the same column as the title, so it reads as a corner mark
+   rather than a nav bar. */
+.header-link {
+  max-width: var(--page);
+  margin: 0 auto;
+  padding: 2rem 2.5rem 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+/* Above the stacking breakpoint there is room for it to read as a masthead
+   rather than a footnote. After the rule above, which would otherwise win. */
+@media (min-width: 821px) {
+  .header-link {
+    font-size: 1.5rem;
+  }
+}
+
+.header-link a,
+.header-link a:visited {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.header-link a:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* The link already supplies the top margin. */
+.header-link + header {
+  padding-top: 1.75rem;
+}
+
 header {
   border-bottom: 1px solid var(--rule);
 }
@@ -134,7 +171,7 @@ header h1 {
   font-weight: 600;
   line-height: 1.05;
   letter-spacing: -0.025em;
-  max-width: var(--measure);
+  max-width: var(--measure-wide);
 }
 
 /* ---- markdown-authored regions --------------------------------------- */
@@ -142,7 +179,7 @@ header h1 {
 /* The abstract and footer are rendered from markdown, so this has to cover
    whatever that emits rather than a known set of elements. */
 .prose {
-  max-width: var(--measure);
+  max-width: var(--measure-wide);
   color: var(--ink-soft);
 }
 
@@ -288,7 +325,22 @@ header .prose {
 }
 
 .share .handle {
-  margin-left: 0.625rem;
+  margin-left: 0.5em;
+}
+
+/* Driven off the label so the marks track whatever size .share is set to,
+   rather than the width/height attributes on the svg itself. */
+.share svg {
+  height: 1.05em;
+  width: auto;
+}
+
+/* Matches the header link above the stacking breakpoint. After the rules above,
+   which would otherwise win. */
+@media (min-width: 821px) {
+  .share {
+    font-size: 1.5rem;
+  }
 }
 
 .bsky + .mstdn {
@@ -325,6 +377,14 @@ footer .share {
   .presentation,
   footer {
     padding: 2.5rem 1.25rem;
+  }
+
+  .header-link {
+    padding: 1.5rem 1.25rem 0;
+  }
+
+  .header-link + header {
+    padding-top: 1.25rem;
   }
 
   .slides {

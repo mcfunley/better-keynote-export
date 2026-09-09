@@ -9,6 +9,12 @@
   </head>
   <body>
 
+    {% if header_link_url %}
+    <nav class="header-link">
+      <a href="{{ header_link_url }}">{{ header_link_text }}</a>
+    </nav>
+    {% endif %}
+
     <header>
       <h1>{{ title if title != None else 'Title' }}</h1>
       {% if abstract %}<div class="prose">{{ abstract }}</div>{% endif %}
