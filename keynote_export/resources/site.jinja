@@ -11,9 +11,7 @@
 
     <header>
       <h1>{{ title if title != None else 'Title' }}</h1>
-      <p>
-        Edit this to add an abstract.
-      </p>
+      {% if abstract %}<div class="prose">{{ abstract }}</div>{% endif %}
 
       {% include "share.jinja" %}
     </header>
@@ -44,7 +42,9 @@
     <footer>
       {% include "share.jinja" %}
 
-      <p>
+      {% if footer %}<div class="prose">{{ footer }}</div>{% endif %}
+
+      <p class="colophon">
         Generated with
         <a href="https://github.com/mcfunley/better-keynote-export">
           keynote-export</a>.

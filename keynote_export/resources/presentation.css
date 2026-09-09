@@ -122,10 +122,76 @@ header h1 {
   max-width: var(--measure);
 }
 
-header p {
+/* ---- markdown-authored regions --------------------------------------- */
+
+/* The abstract and footer are rendered from markdown, so this has to cover
+   whatever that emits rather than a known set of elements. */
+.prose {
   max-width: var(--measure);
-  margin-top: 1.25rem;
   color: var(--ink-soft);
+}
+
+header .prose {
+  margin-top: 1.25rem;
+}
+
+.prose > * + * {
+  margin-top: 0.85em;
+}
+
+.prose h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.prose h3 {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.prose a,
+.prose a:visited {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.prose strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.prose em {
+  font-style: italic;
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 1.25rem;
+}
+
+.prose ul > li {
+  list-style: disc;
+}
+
+.prose ol > li {
+  list-style: decimal;
+}
+
+.prose li + li {
+  margin-top: 0.35em;
+}
+
+.prose code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+}
+
+.prose blockquote {
+  border-left: 2px solid var(--rule);
+  padding-left: 1rem;
 }
 
 /* ---- slides ---------------------------------------------------------- */
@@ -223,13 +289,15 @@ footer .share {
   margin-bottom: 2rem;
 }
 
-footer p {
+/* Scoped to the credit line so it doesn't restyle markdown-authored footers. */
+.colophon {
   font-size: 0.8125rem;
   color: var(--ink-soft);
+  margin-top: 2rem;
 }
 
-footer a,
-footer a:visited {
+.colophon a,
+.colophon a:visited {
   color: var(--ink-soft);
 }
 

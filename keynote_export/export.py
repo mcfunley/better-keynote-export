@@ -9,6 +9,7 @@ from typing import Optional
 
 import appscript
 import click
+import markdown
 from jinja2 import Environment, FileSystemLoader
 from PIL import Image
 from reportlab.lib.colors import HexColor
@@ -41,7 +42,16 @@ pdfmetrics.registerFont(sf)
 
 class Options(object):
     def __init__(
-        self, outdir, pagesize, font_size, title, bsky_handle, mastodon_handle, skip_builds
+        self,
+        outdir,
+        pagesize,
+        font_size,
+        title,
+        bsky_handle,
+        mastodon_handle,
+        skip_builds,
+        abstract=None,
+        footer=None,
     ):
         self.outdir = os.path.abspath(outdir)
         self.pagesize = pagesize
@@ -53,6 +63,8 @@ class Options(object):
         self.bsky_handle = bsky_handle
         self.mastodon_handle = mastodon_handle
         self.skip_builds = skip_builds
+        self.abstract = abstract
+        self.footer = footer
 
     @property
     def slidesdir(self):
@@ -75,6 +87,14 @@ def variant_widths(native_width):
 
 def srcset(variants):
     return ", ".join("%s %dw" % (path, w) for path, w in variants)
+
+
+def render_markdown(path):
+    """Render a markdown file to HTML. Returns None when no path was given."""
+    if not path:
+        return None
+    with open(path, encoding="utf-8") as f:
+        return markdown.markdown(f.read(), output_format="html5").strip()
 
 
 def paragraphs(note):
@@ -219,6 +239,8 @@ def generate_html(opts, slides):
         slides=[rendered(s) for s in slides],
         sizes=SLIDE_SIZES,
         title=opts.title,
+        abstract=opts.abstract,
+        footer=opts.footer,
         bsky_handle=opts.bsky_handle,
         mastodon_handle=opts.mastodon_handle,
     )
@@ -262,6 +284,20 @@ def generate_html(opts, slides):
 )
 @click.option("-t", "--title", help="Title of the presentation", required=True)
 @click.option(
+    "-a",
+    "--abstract",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False),
+    help="Markdown file to render under the title",
+    required=False,
+)
+@click.option(
+    "-F",
+    "--footer",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False),
+    help="Markdown file to render in the footer",
+    required=False,
+)
+@click.option(
     "-u",
     "--bluesky-handle",
     help="BlueSky handle for author",
@@ -284,6 +320,8 @@ def main(
     pagesize: str,
     font_size: int,
     title: str,
+    abstract: Optional[str],
+    footer: Optional[str],
     bluesky_handle: Optional[str],
     mastodon_handle: Optional[str],
     skip_builds: bool,
@@ -297,6 +335,8 @@ def main(
         bluesky_handle,
         mastodon_handle,
         skip_builds,
+        abstract=render_markdown(abstract),
+        footer=render_markdown(footer),
     )
 
     print("Processing", keynote)
