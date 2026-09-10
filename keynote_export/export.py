@@ -44,6 +44,12 @@ SLIDE_SIZES = (
 # background matches --paper in presentation.css: silhouette art on
 # transparency disappears against dark browser chrome, and iOS composites
 # apple-touch-icon onto black.
+# The share image. The site ships webp, which several link scrapers still will
+# not render, so this one raster stays jpeg. Slides are 16:9, which every
+# platform crops sanely; 1200 wide is the usual recommendation.
+SHARE_IMAGE = "share.jpg"
+SHARE_IMAGE_WIDTH = 1200
+
 FAVICON_MASTER = 1024
 FAVICON_BACKGROUND = "#f4f5f3"
 ICO_SIZES = (16, 32, 48)
@@ -69,6 +75,9 @@ class Options(object):
         header_link_url=None,
         header_link_text=None,
         favicon=None,
+        url=None,
+        description=None,
+        share_image=None,
     ):
         self.outdir = os.path.abspath(outdir)
         self.pagesize = pagesize
@@ -85,6 +94,9 @@ class Options(object):
         self.header_link_url = header_link_url
         self.header_link_text = header_link_text
         self.favicon = favicon
+        self.url = url.rstrip("/") if url else None
+        self.description = description
+        self.share_image = share_image
 
     @property
     def slidesdir(self):
@@ -115,6 +127,29 @@ def render_markdown(path):
         return None
     with open(path, encoding="utf-8") as f:
         return markdown.markdown(f.read(), output_format="html5").strip()
+
+
+def generate_share_image(opts):
+    """Write the og:image, defaulting to the first slide.
+
+    Has to run before generate_images, which deletes the jpegs it works from.
+    """
+    source = opts.share_image
+    if not source:
+        exported = sorted(glob("%s/*jpeg" % opts.slidesdir))
+        if not exported:
+            return None
+        source = exported[0]
+
+    with Image.open(source) as img:
+        width = min(SHARE_IMAGE_WIDTH, img.width)
+        height = round(img.height * width / img.width)
+        share = img.convert("RGB").resize((width, height), Image.LANCZOS)
+
+    share.save(
+        os.path.join(opts.outdir, SHARE_IMAGE), quality=85, optimize=True
+    )
+    return {"name": SHARE_IMAGE, "width": width, "height": height}
 
 
 def rasterize_svg(svg, out, size):
@@ -333,9 +368,13 @@ def export_keynote(filename, opts):
 
     return notes
 
-def generate_html(opts, slides, favicon=False):
+def generate_html(opts, slides, favicon=False, share=None):
     def imgpath(s):
         return s.replace(opts.outdir + "/", "")
+
+    def absolute(name):
+        """og:url and og:image have to be absolute, so they need --url."""
+        return "%s/%s" % (opts.url, name) if opts.url else None
 
     def rendered(slide):
         variants = [(imgpath(p), w) for p, w in slide["variants"]]
@@ -359,6 +398,11 @@ def generate_html(opts, slides, favicon=False):
         header_link_url=opts.header_link_url,
         header_link_text=opts.header_link_text,
         favicon=favicon,
+        description=opts.description,
+        page_url=opts.url,
+        share_url=absolute(share["name"]) if share else None,
+        share_width=share["width"] if share else None,
+        share_height=share["height"] if share else None,
         bsky_handle=opts.bsky_handle,
         mastodon_handle=opts.mastodon_handle,
     )
@@ -416,6 +460,27 @@ def generate_html(opts, slides, favicon=False):
     required=False,
 )
 @click.option(
+    "-U",
+    "--url",
+    help="Where the site will be published. Required for og:url and og:image.",
+    required=False,
+    type=click.STRING,
+)
+@click.option(
+    "-d",
+    "--description",
+    help="One line describing the talk, for search results and link previews",
+    required=False,
+    type=click.STRING,
+)
+@click.option(
+    "-s",
+    "--share-image",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False),
+    help="Image for link previews. Defaults to the first slide.",
+    required=False,
+)
+@click.option(
     "-i",
     "--favicon",
     type=click.Path(exists=True, file_okay=True, dir_okay=False),
@@ -461,6 +526,9 @@ def main(
     title: str,
     abstract: Optional[str],
     footer: Optional[str],
+    url: Optional[str],
+    description: Optional[str],
+    share_image: Optional[str],
     favicon: Optional[str],
     header_link: Optional[str],
     header_link_text: Optional[str],
@@ -487,13 +555,20 @@ def main(
         header_link_url=header_link,
         header_link_text=header_link_text,
         favicon=favicon,
+        url=url,
+        description=description,
+        share_image=share_image,
     )
 
     print("Processing", keynote)
     make_dirs(opts)
     notes = export_keynote(keynote, opts)
     generate_pdf(opts, notes)
-    generate_html(opts, generate_images(opts, notes), generate_favicons(opts))
+    # Before generate_images, which deletes the jpegs the share image needs.
+    share = generate_share_image(opts)
+    generate_html(
+        opts, generate_images(opts, notes), generate_favicons(opts), share
+    )
 
 
 if __name__ == "__main__":

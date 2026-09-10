@@ -55,6 +55,11 @@ There are optional flags for the parts of the page that aren't slides:
                                  the manifest icons, and links them
   --header-link=<a url>          a small link above the title, with
   --header-link-text=<a label>   its label
+  --url=<where it will live>     needed for og:url and og:image, which have
+                                 to be absolute
+  --description=<one line>       for search results and link previews
+  --share-image=<an image>       the link preview picture. Defaults to the
+                                 first slide.
 ```
 
 The markdown files are read on every run, so they are where that copy should
@@ -68,5 +73,10 @@ You must have Keynote installed to use this.
 (`brew install librsvg`) when it is installed, and falls back to Quick Look,
 which ships with macOS but flattens transparency onto white. Scale and crop the
 SVG how you want it first; the derivatives are straight resamples of it.
+
+The slides are published as webp, which some link scrapers still refuse to
+render, so `--share-image` is written out separately as `share.jpg`. Open Graph
+also requires absolute URLs, so `og:url` and `og:image` are only emitted when
+`--url` is given.
 
 Fundamentally, this works by scripting Keynote using Applescript. The details of this helpfully change from Keynote version to version. So if the script isn't working, it might be that I haven't updated it recently and minor tweaks are needed for the latest version of Keynote. Pull requests welcome!
